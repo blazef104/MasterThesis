@@ -1,0 +1,90 @@
+% !TeX encoding = UTF-8
+% !TeX program = pdflatex
+% !TeX spellcheck = en_US
+
+\documentclass[LaM,binding=0.6cm]{sapthesis}
+
+\usepackage{microtype}
+\usepackage{listings}
+\lstset{
+basicstyle=\small\ttfamily,
+columns=flexible,
+breaklines=true
+}
+
+\usepackage{hyperref}
+\hypersetup{
+			hyperfootnotes=true,			
+			bookmarks=true,			
+			colorlinks=true,
+			linkcolor=red,
+            linktoc=page,
+			anchorcolor=black,
+			citecolor=red,
+			urlcolor=blue,
+			pdftitle={Master Thesis - Deceptive Box: Whole-System Emulation Meets Evasive Malware},
+			pdfauthor={Giulio Ginesi},
+			pdfkeywords={thesis, sapienza, roma, university}
+ }
+\usepackage[super]{nth}
+
+% Commands for the titlepage
+\title{Deceptive Box: Whole-System Emulation Meets Evasive Malware}
+\author{Giulio Ginesi}
+\IDnumber{1840066}
+\course{Cybersecurity}
+\courseorganizer{Facolt\`{a} di Ingegneria dell'Informazione, Informatica e Statistica}
+\AcademicYear{2019/2020}
+\copyyear{2020}
+\advisor{Prof. Daniele Cono D'Elia}
+% \advisor{Dr. Nome Cognome}
+% \coadvisor{Dr. Nome Cognome}
+\authoremail{ginesi.1840066@studenti.uniroma1.it}
+
+% \examdate{16 April 2013}
+% \examiner{Prof. Nome Cognome}
+% \examiner{Prof. Nome Cognome}
+% \examiner{Dr. Nome Cognome}
+\versiondate{\today}
+
+
+
+\begin{document}
+
+\frontmatter
+
+\maketitle
+
+% \dedication{A (G)Anna}
+
+% \begin{abstract}
+% This document is an example which shows the main features of
+% the \LaTeXe\ class \texttt{sapthesis.cls} developed by Francesco Biccari
+% with the help of GuIT (Gruppo Utilizzatori Italiani di \TeX).
+% \end{abstract}
+
+\begin{acknowledgments}
+Ho deciso di scrivere i ringraziamenti in italiano
+
+\end{acknowledgments}
+
+\tableofcontents
+
+\mainmatter
+
+% chapters, ideally one file per chapter
+\input{body/intro.tex}
+\input{body/evasiveMal}
+\input{body/wse}
+\input{body/panda}
+\input{body/DeceptiveBox}
+\input{body/conclusions}
+
+\backmatter
+% bibliography
+\cleardoublepage
+\phantomsection
+\bibliographystyle{unsrt} % BibTeX style
+\bibliography{bibliography} % BibTeX database without .bib extension
+
+\end{document}
