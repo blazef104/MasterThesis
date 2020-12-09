@@ -56,25 +56,15 @@ On the other hand \textbf{Execution Artifacts} are very dependant on the virtual
 
 Other execution artifacts are specific Registry Keys such as \textit{SystemBiosVersion} which takes the following values in VirtualBox and QEMU:
 \begin{itemize}
-    \item \begin{lstlisting}
-        HARDWARE\Description\System (SystemBiosVersion) (VBOX)
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        HARDWARE\Description\System (SystemBiosVersion) (QEMU)
-    \end{lstlisting} 
+    \item \lstinline{HARDWARE\Description\System (SystemBiosVersion) (VBOX)}
+    \item \lstinline{HARDWARE\Description\System (SystemBiosVersion) (QEMU)} 
 \end{itemize}
 
 System files and drivers such as, among the others:
 \begin{itemize}
-    \item \begin{lstlisting}
-        system32\drivers\vmci.sys
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        system32\drivers\VBoxVideo.sys
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        system32\vboxtray.exe
-    \end{lstlisting}
+    \item \lstinline{system32\drivers\vmci.sys}
+    \item \lstinline{system32\drivers\VBoxVideo.sys}
+    \item \lstinline{system32\vboxtray.exe}
 \end{itemize}
 Moreover other structures like ACPI tables, SMBIOS strings as well as Disk Size and RAM Size can be used to fingerprint the system and reveal the presence of a virtual machine. 
 
@@ -83,24 +73,12 @@ Moreover other structures like ACPI tables, SMBIOS strings as well as Disk Size 
 QEMU due to its nature is one of the virtualization systems with the lowest footprint on the guest. Taken directly from the Al-Khaser github repository\footnote{\url{https://github.com/LordNoteworthy/al-khaser}} the artifacts used to fingerprint QEMU are the following:
 
 \begin{itemize}
-    \item \begin{lstlisting}[breaklines]
-        HARDWARE\DEVICEMAP\Scsi\Scsi Port 0\Scsi Bus 0\Target Id 0\Logical Unit Id 0 (Identifier) (QEMU)
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        HARDWARE\Description\System (SystemBiosVersion) (QEMU)
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        SetupAPI SetupDiEnumDeviceInfo (GUID_DEVCLASS_DISKDRIVE)
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        SMBIOS string checks (Qemu)
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        ACPI string checks (Qemu)
-    \end{lstlisting}
-    \item \begin{lstlisting}
-        qemu-ga.exe (QEMU)
-    \end{lstlisting}
+    \item \lstinline{HARDWARE\DEVICEMAP\Scsi\Scsi Port 0\Scsi Bus 0\Target Id 0\Logical Unit Id 0 (Identifier) (QEMU)}
+    \item \lstinline{HARDWARE\Description\System (SystemBiosVersion) (QEMU)}
+    \item \lstinline{SetupAPI SetupDiEnumDeviceInfo (GUID_DEVCLASS_DISKDRIVE)}
+    \item \lstinline{SMBIOS string checks (Qemu)}
+    \item \lstinline{ACPI string checks (Qemu)}
+    \item \lstinline{qemu-ga.exe (QEMU)}
 \end{itemize}
 
 as well as the above mentioned \textit{CPUID} which will return specific strings both for QEMU alone or if used in combination with KVM.
@@ -111,3 +89,5 @@ as well as the above mentioned \textit{CPUID} which will return specific strings
 There are available online different tools to perform automatic checks of the environment which aims to stress test the machine and verify how hidden is the analysis environment. The two most famous ones are Al-Khaser and Paranoid Fish\footnote{\url{https://github.com/a0rtega/pafish}}. Those tools are based on real techniques employed by malware to detect sandboxes and analysis environment and will run all the tests in sequence producing a final report of the passed and failed tests.
 
 Paranoid Fish is a slightly older project which appears not to be maintained anymore while Al-Khaser is the evolution of Paranoid Fish and features many more techniques. It is important to note that not all the implemented techniques are a reliable indicator of the presence of a Virtual environment. Some checks such as the disk size, number of cores or the ram size might still fail even on computers still in use today. 
+
+\todo{Add screenshots of the frameworks} 

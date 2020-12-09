@@ -5,6 +5,7 @@
 \documentclass[LaM,binding=0.6cm]{sapthesis}
 
 \usepackage{microtype}
+
 \usepackage{listings}
 \lstset{
 basicstyle=\small\ttfamily,
@@ -25,8 +26,20 @@ breaklines=true
 			pdftitle={Master Thesis - Deceptive Box: Whole-System Emulation Meets Evasive Malware},
 			pdfauthor={Giulio Ginesi},
 			pdfkeywords={thesis, sapienza, roma, university}
- }
+}
+
 \usepackage[super]{nth}
+\usepackage{color}
+\usepackage{framed}
+
+\newcounter{t0d0_counter}
+\newcommand{\todo}[1]{
+  \stepcounter{t0d0_counter}
+  \definecolor{shadecolor}{rgb}{1,1,0} % this is yellow
+  \begin{shaded}
+  T0D0 \arabic{t0d0_counter}: #1
+  \end{shaded}
+}
 
 % Commands for the titlepage
 \title{Deceptive Box: Whole-System Emulation Meets Evasive Malware}
