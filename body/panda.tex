@@ -18,7 +18,7 @@ Building on top of QEMU architecture \textbf{PANDA} exposes an interface to cont
 
 One of the main components of the framework are \textbf{callbacks}, these are essentially functions that are called when specific events happens inside the virtual machine. Each \textbf{callbacks} is usually called before and after the define event takes place, the relevant function can be selected by using the \textit{before} or \textit{after} prefix (e.g. \lstinline{before_block_exec} and \lstinline{after_block_exec}).
 
-An exhaustive list of available \textbf{callbacks} can be found in the documentation\footnote{\url{https://github.com/panda-re/panda/blob/master/panda/docs/manual.md#appendix-a-callback-list}} however they can be conceptually divided into 4 main categories:
+An exhaustive list of available \textbf{callbacks} can be found in the documentation\footnote{\url{https://github.com/panda-re/panda/blob/master/panda/docs/manual.md\#appendix-a-callback-list}} however they can be conceptually divided into 4 main categories:
 
 \begin{itemize}
     \item \textbf{Execution Callbacks} are generic callbacks used to trace execution of code inside the virtual machine. There are different levels of granularity that this callbacks provide reflecting events inside the virtual machine, usually at CPU level. Example of this events are: asid change, block execution, block translation or single instruction.

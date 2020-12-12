@@ -1,3 +1,4 @@
+% !TEX root = ../main.tex
 \chapter{Whole System Emulation}
 
 Virtualization is the process of abstracting the hardware components of a system in order to make them available to software in a virtual form.
@@ -9,6 +10,8 @@ Another possible use case is a developer that might want to cross compile applic
 Lastly the creation of virtual environments allows for a better management and security of the environment, as a matter of fact virtual machines acts as physically separated individual computers whose resources can easily be managed and machines as well as users can be segregated. As virtual machines run on virtual hardware and the resources are segregated there is little to no interaction between different virtual machines on the same physical hardware. This is particularly interesting as for example in the event of a security incident the network adapter can be removed from the affected virtual machine and it can also be reverted to a pristine state using a snapshot. 
 
 The Operating System on top of which the virtualization software runs is called Host OS while the Operating System that run inside each virtual machine is called Guest OS. 
+
+\daniele{From the structure it is (highly) unclear why out there we have hardware-assisted virtualization and whole-system emulation, that the word hypervisor can apply to both, and that QEMU-KVM is just like VMware and VirtualBox, while QEMU-TCG is a whole-system emulator}
 
 \section{A bit of background: the Hypervisor}
 
@@ -86,7 +89,9 @@ The physical CPU will be under stress as well as it will be shared between Guest
 
 I/O is another interesting aspect of the virtualization that must be taken into account, a VMM must create proper virtual devices such as Network Bridges in order to allow each machine to connect to the network. There are moreover devices such as webcams or USB storage which cannot be accessed concurrently therefore there is no alternative if not to allow a single machine at the time to use them.
 
-\subsection{QEMU}
+\section{QEMU}
+\daniele{Promoted to section. You should expand this a lot. Perhaps show something about the address translation in QEMU, the code cache used for TCG, and some snippet of code. Say that user-mode QEMU is super popular for instance for fuzzing, while full-system emulation is important for many security applications}
+
 
 QEMU is a powerful open source virtualization software which can be operated in two modes: 
 
@@ -114,10 +119,13 @@ There are several mechanism in place to make the above process, which normally h
 \todo{Qemu monitor}
 
 \subsection{Java Virtual Machine: an uncommon one}
+\daniele{Language virtualization is out of scope :-/ this section should probably go, unless you talk about stuff .NET and malware specific to those technologies}
 
 When thinking about virtual machines one often thinks about ways to virtualize an operating system. Virtualization is however used also in programming languages as a matter of fact the Java language implements its own virtual machine. Each java class is compiled in an architecture neutral bytecode output which will then be run inside the JVM. This VM will then take care of translating java opcodes into the real ones. In this way it is sufficient to ship different JVMs for the different architectures and each program that is written in java will run on top of it.  
 \section{Other possible approaches}
 \todo{has docker ever been used for malware analysis? \url{https://www.reddit.com/r/docker/comments/eakd50/help_can_i_safely_run_malware_inside_a_container/}
 \url{https://ieeexplore.ieee.org/abstract/document/9042158}}
+
+\daniele{On Linux they also use eBPF see for instance \url{https://github.com/aquasecurity/tracee}. There are approaches for bare-metal analysis, or with instrumentation done at firmware level (check the BluePill paper, there is a nice table and discussion of other methods). However I think those are a better fit for Chapter 2 rather than here.}
 
 % take a look https://www.blackhat.com/docs/us-14/materials/us-14-Kruegel-Full-System-Emulation-Achieving-Successful-Automated-Dynamic-Analysis-Of-Evasive-Malware-WP.pdf
