@@ -97,7 +97,21 @@ QEMU is a powerful open source virtualization software which can be operated in 
 QEMU is highly modular and can easily be expanded to add more functionalities. Moreover its structure allows a great control over the virtual machine architecture allowing to tap into each single internal component of the machine such as CPU registers and ram. Due to its nature QEMU has been used in many different projects however it still lacks some of the feature of more modern and user friendly virtualization solutions such as Virtual Box or VMWare.
 
 Moreover QEMU supports a large set of different architectures which makes it useful not only to create virtual machines but also for low level OS development.
-\todo{Qemu monitor, qemu intermediate language}
+
+In order to provide support for a wide range of CPUs QEMU leverages Just In Time (JIT) compilation between assembly instructions. This is accomplished with the use of an intermediate code generator called TCG (Tiny Code Generator). This piece of software takes care of translating instruction for the emulated CPU into intermediate instruction (TCG ops) which are then translated into instruction for the real underlying CPU. By posing this middle layer QEMU allows to seamlessly support different architecture of CPUs both to emulate and to run on. This intermediate layer has essentially two sides, one that is facing the physical CPU and is responsible to translate architecture agnostic instructions into ones for the real machine and is called backend. The side facing the virtual CPU that is in charge of translating instructions between the virtual architecture into TCG ops is called frontend.
+
+For example a typical QEMU execution when an arm binary is run on a x86 CPU is as follows: 
+\begin{enumerate}
+    \item Instructions from the arm compiled binary are executed on the virtual CPU.
+    \item TCG frontend takes care of translating the above instructions into an intermediate language. 
+    \item TCG backend trakes care of translating the intermediate instructions into instructions for the real CPU. 
+    \item QEMU executes the resulting instructions on the physical CPU. 
+\end{enumerate}
+
+There are several mechanism in place to make the above process, which normally has a considerable overhead, more efficient. In particular translation takes place for each basic block, each block is divided into single instructions and converted into the intermediate representation, the single instructions are then reassembled in parallel into an intermediate basic block. Once each basic block is translated it is also added into a cache in order to optimize execution. Another mechanism used by QEMU is called chaining and consists in linking translated blocks in the cache in such a way that the emulation can transition between them without the emulator being involved.
+
+
+\todo{Qemu monitor}
 
 \subsection{Java Virtual Machine: an uncommon one}
 

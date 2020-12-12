@@ -54,18 +54,26 @@ On the other hand \textbf{Execution Artifacts} are very dependant on the virtual
 \label{fig:vms}
 \end{figure}
 
-Other execution artifacts are specific Registry Keys such as \textit{SystemBiosVersion} which takes the following values in VirtualBox and QEMU:
+Another common source of information for evasive malware is the windows registry, this is defined in the official documentation as a central hierarchical database used to store information that is necessary to configure the system for one or more users, applications, and hardware devices.
+
+\textit{"The Registry contains information that Windows continually references during operation, such as profiles for each user, the applications installed on the computer and the types of documents that each can create, property sheet settings for folders and application icons, what hardware exists on the system, and the ports that are being used."}\cite{windocs}
+
+The windows registry has a well defined structure, it is organized as a tree and each node in the tree is called a \textit{key}. Each \textit{key} in the registry can contain both \textit{sub-keys} and data entries called \textit{values}. Each \textit{key} has at least 1 value called \textit{Default}. The name of each \textit{key} consists of one or more characters and is case insensitive. Sometimes the presence of a \textit{key} it is sufficient for the application to store a certain setting, other times a \textit{key} will have different \textit{values} representing a piece of information. \textit{Values} can have many different types according to the information they are holding, the most common values are \lstinline{REG_BINARY, REG_DWORD} and \lstinline{REG_SZ}. 
+
+
+An example of virtualization artifact related to the registry is the \textit{SystemBiosVersion} value which for VirtualBox and QEMU is as follows:
 \begin{itemize}
     \item \lstinline{HARDWARE\Description\System (SystemBiosVersion) (VBOX)}
     \item \lstinline{HARDWARE\Description\System (SystemBiosVersion) (QEMU)} 
 \end{itemize}
 
-System files and drivers such as, among the others:
+Other virtualization artifacts are system files and drivers such as, among the others:
 \begin{itemize}
     \item \lstinline{system32\drivers\vmci.sys}
     \item \lstinline{system32\drivers\VBoxVideo.sys}
     \item \lstinline{system32\vboxtray.exe}
 \end{itemize}
+
 Moreover other structures like ACPI tables, SMBIOS strings as well as Disk Size and RAM Size can be used to fingerprint the system and reveal the presence of a virtual machine. 
 
 

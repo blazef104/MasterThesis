@@ -1,5 +1,47 @@
 \chapter{Deceptive Box: PANDA meets evasive malware}
 
+The idea of this thesis was to develop a plugin to modify the Virtual Machine and hide execution artifacts from the system. In this way Evasive Malware can be run on the system having them to reveal the real capabilities by tricking them into believing that the system running is a real physical system.
+\todo{More general details}
+
 \section{Leveraging panda-re to hide artifacts from the system}
 
-\subsection{Writing a panda plugin}
+As widely discussed in the previous chapters \textbf{PANDA} provides many useful features that can be used to modify a running virtual machine. The important thing is to hide artifacts from a very specific process, the evasive malware, and therefore the plugin allows to specify a process name that should be targeted. Instead of hiding every single artifacts left by QEMU on the system it was preferred to analyze the most common checks and focus on those, subsequently, the plugin can be extended to support different evasion techniques. Due to the nature of this project the resulting plugin will need to be run both on live and replay modes. As a matter of fact deep modifications of the system are required in order to hide unwanted strings and behaviour and fool the malware.
+
+Some of the hardware based checks can be avoided simply by fine tuning the system, in particular the disk size and RAM size can be adjusted to avoid the detection by setting the RAM to a value greater that 1 GB and the disk to a size greater than 60GB. 
+
+It was decided in the beginning to write a C plugin in order to perform all the evasive countermeasures and keep the overhead low. However, this quickly turned out to be unfeasible as some of the plugins required to correctly mask virtualization artifacts are designed to be used with the python interface. It is the case of hooks.
+
+The main idea was to use Paranoid Fish and Al-khaser to test what would be detected on the machine and then later patch the relevant artifacts to let the system "pass that check". 
+
+The \textbf{PANDA} plugins directly used for this project are: 
+
+\begin{itemize}
+    \item \textbf{osi} or Operating System Introspection was used to access some of the internal structures of Windows. The peculiarity of this plugin is that it puts a layer of abstraction on top of the Operating System making it easy to write a plugin that will then work on all the supported OS. 
+% +-------------------+  +-------------------+
+% |    Your Plugin    |  |    Your Plugin    |
+% +-------------------+  +-------------------+
+% |        osi        |  |        osi        |
+% +-------------------+  +-------------------+
+% |     osi_linux     |  |    win7x86intro   |
+% +-------------------+  +-------------------+
+    \item \textbf{syscalls2} is a plugin that provides a Plugin to Plugin interface each time a system call is executed. This plugin uses osi under the hood to perform system calls hooking.
+    \item \textbf{hooks} is a plugin that allows the user to specify a address and a function, the function will then be called each time that specific address is reached. This is essentially what a breakpoint is in a debugger.
+    
+\end{itemize}
+
+Newer versions of windows are not supported by many of these plugins therefore in order to perform the analysis it was decided to use a 32 bit version of Windows 7.
+
+
+\subsection{First Step: writing a C plugin}
+
+The first approach was to write a \textbf{PANDA} plugin to hook system calls associated with typical footprinting performed by evasive malware. This involve having a deep understanding of how the Operating System works and which are its internal structures. A common source of information is the windows registry, there are 3 system calls that are used to access the registry: \lstinline{NtQueryValueKey, NtOpenKey} and \lstinline{NtEnumerateKey}. 
+
+
+
+
+\subsection{Second Step: writing a python simulation}
+
+
+
+\section{Results}
+
