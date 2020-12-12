@@ -4,16 +4,23 @@
 
 \documentclass[LaM,binding=0.6cm]{sapthesis}
 
-\usepackage{microtype}
-
+% imported packages
+\usepackage{color}
+\usepackage{dirtree}
+\usepackage{framed}
+\usepackage{hyperref}
 \usepackage{listings}
+\usepackage{microtype}
+\usepackage[super]{nth}
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+% packages configs
 \lstset{
 basicstyle=\small\ttfamily,
 columns=flexible,
 breaklines=true
 }
 
-\usepackage{hyperref}
 \hypersetup{
 			hyperfootnotes=true,			
 			bookmarks=true,			
@@ -27,11 +34,9 @@ breaklines=true
 			pdfauthor={Giulio Ginesi},
 			pdfkeywords={thesis, sapienza, roma, university}
 }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-\usepackage[super]{nth}
-\usepackage{color}
-\usepackage{framed}
-
+% custom commands
 \newcounter{t0d0_counter}
 \newcommand{\todo}[1]{
   \stepcounter{t0d0_counter}
@@ -40,6 +45,7 @@ breaklines=true
   T0D0 \arabic{t0d0_counter}: #1
   \end{shaded}
 }
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Commands for the titlepage
 \title{Deceptive Box: Whole-System Emulation Meets Evasive Malware}
@@ -59,8 +65,6 @@ breaklines=true
 % \examiner{Prof. Nome Cognome}
 % \examiner{Dr. Nome Cognome}
 \versiondate{\today}
-
-
 
 \begin{document}
 

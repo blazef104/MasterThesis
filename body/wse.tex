@@ -97,12 +97,13 @@ QEMU is a powerful open source virtualization software which can be operated in 
 QEMU is highly modular and can easily be expanded to add more functionalities. Moreover its structure allows a great control over the virtual machine architecture allowing to tap into each single internal component of the machine such as CPU registers and ram. Due to its nature QEMU has been used in many different projects however it still lacks some of the feature of more modern and user friendly virtualization solutions such as Virtual Box or VMWare.
 
 Moreover QEMU supports a large set of different architectures which makes it useful not only to create virtual machines but also for low level OS development.
+\todo{Qemu monitor, qemu intermediate language}
 
 \subsection{Java Virtual Machine: an uncommon one}
 
 When thinking about virtual machines one often thinks about ways to virtualize an operating system. Virtualization is however used also in programming languages as a matter of fact the Java language implements its own virtual machine. Each java class is compiled in an architecture neutral bytecode output which will then be run inside the JVM. This VM will then take care of translating java opcodes into the real ones. In this way it is sufficient to ship different JVMs for the different architectures and each program that is written in java will run on top of it.  
 \section{Other possible approaches}
 \todo{has docker ever been used for malware analysis? \url{https://www.reddit.com/r/docker/comments/eakd50/help_can_i_safely_run_malware_inside_a_container/}
-\url{}}
+\url{https://ieeexplore.ieee.org/abstract/document/9042158}}
 
 % take a look https://www.blackhat.com/docs/us-14/materials/us-14-Kruegel-Full-System-Emulation-Achieving-Successful-Automated-Dynamic-Analysis-Of-Evasive-Malware-WP.pdf
