@@ -1,6 +1,7 @@
 % !TEX root = ../main.tex
 
 \chapter{Malware Analysis}
+\label{chap:1}
 
 \daniele{Add introductory text on the importance of having efficient and semantically rich techniques for analyzing malware, the different trade-offs for different levels of inspection, and the heterogeneous alternatives available}
 
@@ -34,6 +35,7 @@ There are also ad-hoc sandboxes used to automatically run a malware and then col
 In most cases the best analysis technique is a combination of the two. As a matter of fact debuggers are often used to unpack malware by setting breakpoints in the code and running it in a controlled environment until the real malware is extracted and loaded into memory, the resulting piece of code can then be dumped to disk and statically analyzed. 
 
 \section{Evasive Malware}
+\label{sec:evmal}
 
 As mentioned previously the Dynamic Analysis takes place inside a controlled environment. Having a real computer, isolated from the network and re-imaged every time that a sample is analyzed is the best scenario but also highly inefficient. There are different technologies, such as Virtual Machines, that are used nowadays to achieve the same results but with less effort, overhead and a great saving in terms of costs. 
 
