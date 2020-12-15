@@ -187,7 +187,7 @@ The second part of the python plugin is a bit more complicated as it requires to
 In order to find the base address of the libraries loaded in the system it is possible to use the pypanda helper function \lstinline{panda.get_mappings(cpu)}, this is based on the osi plugin and will return as output a dictionary containing the 
 libraries loaded in the system in that precise moment. This implies that if the function is called while a given executable is running it will return the libraries loaded by that executable. 
 
-The function patched by the plugin are contained inside the \textit{kernel32.dll} library although the process is identical for any other library. In order to place the hook in the correct place it is important to first find out the offset of the function that will be hooked inside the library, this can be easily accomplished by opening the dll with pestudio which will give the offset of all the functions exported by the dll as it can be seen in Figure \ref{fig:pestudio}. 
+The function patched by the plugin is contained inside the \textit{kernel32.dll} library although the process is identical for any other library. In order to place the hook in the correct place it is important to first find out the offset of the function that will be hooked inside the library, this can be easily accomplished by opening the dll with pestudio which will give the offset of all the functions exported by the dll as it can be seen in Figure \ref{fig:pestudio}. In this case the \lstinline{GetSystemInfo} function is the one that is called by ParanoidFish in order to get the number of processors. The subsequent paragraph will focus on this function. 
 
 \noindent
 \begin{figure}[htp]
@@ -230,10 +230,65 @@ def ntmap(cpu, pc, SectionHandle,  ProcessHandle, BaseAddress, ZeroBits, CommitS
 \label{fig:ntmap}
 \end{figure}
 
-The memory callback is necessary as when the \lstinline{NtMapViewOfSection} function is called the library is not yet loaded into the reserved virtual memory and therefore placing an hook at an address in that range will not work as it will be overwritten when the content of the dll is loaded. Instead by monitoring the reserved portion of memory for a read operation we will be sure that when the read takes place the code will have been loaded in memory. 
+The memory callback is necessary as when the \lstinline{NtMapViewOfSection} function is called the library is not yet loaded into the reserved virtual memory and therefore placing an hook at an address in that range will not work as it will be overwritten when the content of the dll is loaded. Instead by monitoring the reserved portion of memory for a read operation we will be sure that when the read takes place the code will have been loaded in memory and therefore the hook can be place safely. 
 
-\todo{Finish this up, more details on rest of the python plugin}
+As mentioned above the function that has been hooked in the python plugin is \lstinline{GetSystemInfo}, such function is exported by \textit{kernel32.dll}. However, it is actually implemented inside \textit{kernelbase.dll}. Such function is actually really simple and takes as input a pointer to a \lstinline{SYSTEM_INFO} structure that will hold the results, the fields of the structure can be seen in Figure \ref{fig:sysinfo}. The content of this structure will be populated after the function executes therefore in order to correctly modify the \lstinline{dwNumberOfProcessors} field, which is the one checked by ParanoidFish, it is necessary to obtain the return address at which the function will jump after the execution. In this way the structure will have been already populated and the fields can be safely modified.
+
+This can be achieved by saving the return address saved on the stack when the function is called and placing a breakpoint on such address. In this way the address of the structure can be extracted from the stack once the breakpoint is hit and then the \lstinline{dwNumberOfProcessors} field can be modified.  
+
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=C++] 
+typedef struct _SYSTEM_INFO {
+  union {
+    DWORD dwOemId;
+    struct {
+      WORD wProcessorArchitecture;
+      WORD wReserved;
+    } DUMMYSTRUCTNAME;
+  } DUMMYUNIONNAME;
+  DWORD     dwPageSize;
+  LPVOID    lpMinimumApplicationAddress;
+  LPVOID    lpMaximumApplicationAddress;
+  DWORD_PTR dwActiveProcessorMask;
+  DWORD     dwNumberOfProcessors;
+  DWORD     dwProcessorType;
+  DWORD     dwAllocationGranularity;
+  WORD      wProcessorLevel;
+  WORD      wProcessorRevision;
+} SYSTEM_INFO, *LPSYSTEM_INFO;
+\end{lstlisting}
+\caption{\lstinline{STYSTEM_INFO} structure.}
+\label{fig:sysinfo}
+\end{figure}
+
+As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis the record and replay actions have been automated inside the python script. To acheive this the hooks2 plugin was used, such plugin is designed to substitute the hooks one although it is not yet finished it already provides some useful callbacks. In particular the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording, some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in \ref{fig:startstop}
+
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=Python] 
+# Only used to take recordings of patched sessions
+@panda.ppp("hooks2", "on_process_start")
+def rec(cpu, procname, asid, pid):
+    print(ffi.string(procname).decode())
+    if ffi.string(procname).decode() == process_name:
+        print(ffi.string(procname).decode()," Started!")
+        if not rep:
+            panda.run_monitor_cmd("begin_record rec")
+
+@panda.ppp("hooks2", "on_process_end")
+def end_rec(cpu, procname, asid, pid):
+    if (ffi.string(procname).decode() == process_name) and not rep:
+        panda.disable_callback("hyper")
+        panda.disable_hook("sysinfohook")
+        panda.disable_hook("patchsysinfo")
+        panda.disable_ppp("ntmap")
+        panda.run_monitor_cmd("end_record")
+\end{lstlisting}
+\caption{functions used to start and stop the recording.}
+\label{fig:startstop}
+\end{figure}
 
 \section{Results}
 
-\todo{How the plugins helped compared to plain executon?}
+By combining the above plugins 
