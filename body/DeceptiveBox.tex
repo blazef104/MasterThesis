@@ -1,44 +1,47 @@
 \chapter{Deceptive Box: PANDA meets evasive malware}
 \label{chap:4}
 
-The idea of this thesis was to develop a plugin to modify the Virtual Machine and hide execution artifacts from the system. In this way Evasive Malware can be run on the system having them to reveal the real capabilities by tricking them into believing that the system running is a real physical system.
-\todo{More general details}
+As discussed before some particular categories of malware have been developed with specific checks in order to finely fingerprint the environment they are in to check for any sign of virtualization. This means that in order for them to be analyzed some specific virtual machines in which artfacts have been carefully removed and masqueraded are needed.
 
-\section{Leveraging panda-re to hide artifacts from the system}
+The goal of this thesis was to develop a set of Panda plugins that can be used to modify the Virtual Machine and Operating System internal state, at run time, in order to hide virtualization artifacts from the system. In this way Evasive Malwares can be run on a Fully Emulated System invalidating their attempts to fingerpint the environment and therefore having them to reveal their real capabilities.
+By using Panda for this there are tree advantages: 
+\begin{enumerate}
+    \item The system can be monitored and modified at run time in order to counter any evasion attempt. 
+    \item Due to the fact that it works in full system emulation mode it provides an external view of the system which is segregated but inspectable.
+    \item The ability to record and replay allows for a malware to be run once on the live system and then analyzed later.
+\end{enumerate}
 
-As widely discussed in the previous chapters \textbf{PANDA} provides many useful features that can be used to modify a running virtual machine. The important thing is to hide artifacts from a very specific process, the evasive malware, and therefore the plugin allows to specify a process name that should be targeted. Instead of hiding every single artifacts left by QEMU on the system it was preferred to analyze the most common checks and focus on those, subsequently, the plugin can be extended to support different evasion techniques. Due to the nature of this project the resulting plugin will need to be run both on live and replay modes. As a matter of fact deep modifications of the system are required in order to hide unwanted strings and behaviour and fool the malware.
+In the following sections the 4 main contributions will be presented: 
+
+\section{Leveraging panda-re to manipulate the live system}
+
+As widely discussed in the previous chapters \textbf{PANDA} provides many useful features that can be used to modify a running virtual machine. Blindly faking results for different functions or instructions in a system is dangerous as most of them will likely be used by many other programs and giving wrong or arbitrary information might lead to system instability and crashes. Therefore all the plugins written needs to be aware of the target process that needs to be patched.
+
+Instead of hiding every single artifacts left by QEMU on the system the preferred way was to analyze what ParanoidFish and Al-Khaser could find and focus on patching those, subsequently, the plugin can be extended to support different evasion techniques. Due to the nature of this project the resulting plugins will need to be run both on live and replay modes. As a matter of fact the plugins will introduce deep modifications in the system that, due to the way in which the record/replay system works, will need to be run always in order to maintain the integrity of the system during replays.
 
 Some of the hardware based checks can be avoided simply by fine tuning the system, in particular the disk size and RAM size can be adjusted to avoid the detection by setting the RAM to a value greater that 1 GB and the disk to a size greater than 60GB. 
 
-It was decided in the beginning to write a C plugin in order to perform all the evasive countermeasures and keep the overhead low. However, this quickly turned out to be unfeasible as some of the plugins required to correctly mask virtualization artifacts are designed to be used with the python interface. It is the case of hooks.
-
-The main idea was to use Paranoid Fish and Al-khaser to test what would be detected on the machine and then later patch the relevant artifacts to let the system "pass that check". 
+Some of the plugins used to patch the system are designed to be used with the python interface of \textbf{PANDA}, in particular the hooks plugin. Using the python interface will introduce a big overhead in the virtual machine therefore in order to try to reduce it at minimum only it was used only when really necessary (i.e. to perform api hooking). In addition to this it was necessary to create a new \textbf{PANDA} callback in order to have control of the Time Stamp Counter (TSC) during emulation.  
 
 The \textbf{PANDA} plugins directly used for this project are: 
 
 \begin{itemize}
-    \item \textbf{osi} or Operating System Introspection was used to access some of the internal structures of Windows. The peculiarity of this plugin is that it puts a layer of abstraction on top of the Operating System making it easy to write a plugin that will then work on all the supported OS. 
-% +-------------------+  +-------------------+
-% |    Your Plugin    |  |    Your Plugin    |
-% +-------------------+  +-------------------+
-% |        osi        |  |        osi        |
-% +-------------------+  +-------------------+
-% |     osi_linux     |  |    win7x86intro   |
-% +-------------------+  +-------------------+
+    \item \textbf{osi} or Operating System Introspection was used to interface with the guest Operating System in order to extract for example the list of running programs or the list of loaded libraries. The peculiarity of this plugin is that it puts a layer of abstraction on top of the Operating System making it easy to write a plugin that will then work on all the supported OS.
+    
     \item \textbf{syscalls2} is a plugin that provides a Plugin to Plugin interface each time a system call is executed. This plugin uses osi under the hood to perform system calls hooking, this allows for a breakpoint to be placed either when the syscall is executed or when the execution returns from the above sytem call. This latter part is particularly useful when exploring or changing the information returned from a specific syscall.
     
     \item \textbf{hooks} is a plugin that allows the user to specify a address and a function, the function will then be called each time that specific address is reached. This is essentially what a breakpoint is in a debugger.
     
+    \item \textbf{hooks2} is the replacement for the hooks plugin however it is not yet completed and not all functionalities are working correctly however it provides some useful PPP interfaces. In particular \lstinline{on_process_start} and \lstinline{on_process_end} were used to execute specific actions when the monitored program was started.
 \end{itemize}
 
-Newer versions of windows are not supported by many of these plugins therefore in order to perform the analysis it was decided to use a 32 bit version of Windows 7.
+Newer versions of windows are not supported by many of these plugins therefore in order to perform the analysis it was decided to use the most recent supported version which is Windows 7 32 bit.
 
+\subsection{System call hooking}
 
-\subsection{First Step: writing a C plugin}
+The first approach was to write a \textbf{PANDA} plugin to hook system calls associated with typical footprinting performed by evasive malware. This involves having a deep understanding of how the Operating System works and which are its internal structures. A common source of information is the windows registry, there are 3 system calls that are used to access the registry: \lstinline{NtQueryValueKey, NtOpenKey} and \lstinline{NtEnumerateKey}. 
 
-The first approach was to write a \textbf{PANDA} plugin to hook system calls associated with typical footprinting performed by evasive malware. This involve having a deep understanding of how the Operating System works and which are its internal structures. A common source of information is the windows registry, there are 3 system calls that are used to access the registry: \lstinline{NtQueryValueKey, NtOpenKey} and \lstinline{NtEnumerateKey}. 
-
-Using the \textbf{syscalls2} plugin different breakpoints were placed on the above mentioned system calls, in particular it was decided to capture the data returned by the above mentioned system calls. As \textbf{PANDA} is based on QEMU  \lstinline{NtEnumerateKey} and \lstinline{NtOpenKey} are useful to catch enumeration however, \lstinline{NtQueryValueKey} is the function that provides the final string used for detection.
+Using the \textbf{syscalls2} plugin different breakpoints were placed on the above mentioned system calls, in particular it was decided to capture the data returned by the above mentioned system calls. As \textbf{PANDA} is based on QEMU/BOCHS these are two of the strings that will be searched in different registry values. \lstinline{NtEnumerateKey} and \lstinline{NtOpenKey} are useful to catch enumeration however, \lstinline{NtQueryValueKey} is the syscall that provides the final string used for detection.
 
 \lstinline{NtQueryValueKey} is the user mode version of \lstinline{ZwQueryValueKey}. This function allows to query the content of a value inside a specific registry key. In particular the key to be queried must have been accessed before with the \lstinline{NtCreateKey} or \lstinline{ZwOpenKey}, these functions will return a \textit{KeyHandle} that identify that specific key and that must be passed as parameter to the \lstinline{NtQueryValueKey} function. In addition to this there are some other values required to properly query the registry key, in particular \textit{ValueName} holds the name of the value to be queried. \textit{KeyValueInformationClass} specify the type of information to be returned and Length specify the length of the output buffer called \textit{KeyValueInformation}. The complete header of such function can be seen in Figure \ref{fig:querykey}.
 
@@ -57,9 +60,9 @@ NtQueryValueKey(
 \label{fig:querykey}
 \end{figure}
 
-The \textit{KeyValueInformationClass} is particularly interesting as based on this value the tyupe of information returned inside the \textit{KeyValueInformation} changes.
+The \textit{KeyValueInformationClass} is particularly interesting as based on this value the type of information returned inside the \textit{KeyValueInformation} changes.
 
-A common enumeration technique consists of querying the value \textit{SystemBiosVersion} which is found under the path \lstinline{HKEY_LOCAL_MACHINE\HARDWARE\Description\System} and comparing it with the string \textit{BOCHS}.
+A common enumeration technique to detect QEMU consists of querying the value \textit{SystemBiosVersion} which is found under the path \lstinline{HKEY_LOCAL_MACHINE\HARDWARE\Description\System} and comparing it with the string \textit{BOCHS}.
 
 In order to patch the above described System Call using \textbf{PANDA} it was necessary to hook the function when it returns, this can be done in the C plugin by registering to use appropriate \textbf{PPP} callback in the \lstinline{init_plugin} section. The implementation can be seen in Figure \ref{fig:pinit}.
 
@@ -143,8 +146,8 @@ uint32_t guest_wstrncpy(CPUState *cpu, char *buf, size_t maxlen, target_ulong gu
 This is an effective method to patch various system calls and can easily be expanded for any other syscall used for Virtualization detection.
 
 
-\subsection{Second Step: writing a python simulation}
-
+\subsection{CPUID hooking}
+\todo{review the below and properly divide in subsections}
 Patching other virtualization artifacts such as library calls and CPUID instructions is a more complex task as there are no available plugins that perform the same task as the syscall2. It was therefore decided to switch to python this, as mentioned before, has some other advantages such as the ability to run a complete simulation by having complete control over the virtual machine from the python script. Moreover one of the advantages of the python library is that it has a builtin mechanism for detecting the program that is running simply by passing its name to the python function, removing the need to implement a custom function as it has been done with the C plugin.
 
 It must be noted that all the flexibility that python provides on the management and interaction side is at the cost of performance therefore simulations run using the python script have a much lower performance than the native ones. Moreover as cited before in order for the \textbf{PANDA} plugins to work it is necessary to use QEMU without the KVM acceleration, this further lowers the performance of the system. 
@@ -181,6 +184,9 @@ def tt(cpu):
 \caption{CPUID patching}
 \label{fig:cpuidpat}
 \end{figure}
+
+
+\subsection{API hooking}
 
 The second part of the python plugin is a bit more complicated as it requires to hooks some specific functions in a library on the system. As the libraries are loaded at a different address each time it is necessary to first find out the right address at which the library will be loaded, then the offset of the function to be hooked must be added to the base address of library and finally it is possible to set the desired breakpoint. However, it must be noted that in order for the breakpoint to work the code of the library must have been already loaded in memory. 
 
@@ -262,7 +268,7 @@ typedef struct _SYSTEM_INFO {
 \label{fig:sysinfo}
 \end{figure}
 
-As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis the record and replay actions have been automated inside the python script. To acheive this the hooks2 plugin was used, such plugin is designed to substitute the hooks one although it is not yet finished it already provides some useful callbacks. In particular the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording, some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in \ref{fig:startstop}
+As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis the record and replay actions have been automated inside the python script. To achieve this the hooks2 plugin was used, such plugin is designed to substitute the hooks one although it is not yet finished it already provides some useful callbacks. In particular the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording, some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in \ref{fig:startstop}
 
 \begin{figure}[htp]
 \centering
@@ -288,6 +294,12 @@ def end_rec(cpu, procname, asid, pid):
 \caption{functions used to start and stop the recording.}
 \label{fig:startstop}
 \end{figure}
+
+
+\subsection{Faking time results}
+
+
+
 
 \section{Results}
 

@@ -31,7 +31,14 @@ The Static Analysis is a powerful technique however for some more advanced piece
 This kind of analysis involves running the sample with a debugger attached, a debugger allows the analyst to inspect the internal structure of the machine at runtime having direct access to CPU registers, process memory and allowing the user to modify the control flow of a program using breakpoints, inserting custom instructions and modify the memory during execution. 
 
 There are also ad-hoc sandboxes used to automatically run a malware and then collect all the different interactions with the system producing then a detailed report. This is often referred as automatic malware analysis and the most common sandboxes are cuckoo\footnote{\url{https://cuckoosandbox.org/}}, joe sandbox \footnote{\url{https://www.joesandbox.com/}} and VMRay \footnote{\url{https://www.vmray.com/}}. 
+\subsubsection{Other possible approaches}
 
+\todo{has docker ever been used for malware analysis? \url{https://www.reddit.com/r/docker/comments/eakd50/help_can_i_safely_run_malware_inside_a_container/}
+\url{https://ieeexplore.ieee.org/abstract/document/9042158}}
+
+\daniele{On Linux they also use eBPF see for instance \url{https://github.com/aquasecurity/tracee}. There are approaches for bare-metal analysis, or with instrumentation done at firmware level (check the BluePill paper, there is a nice table and discussion of other methods). However I think those are a better fit for Chapter 2 rather than here.}
+
+% take a look https://www.blackhat.com/docs/us-14/materials/us-14-Kruegel-Full-System-Emulation-Achieving-Successful-Automated-Dynamic-Analysis-Of-Evasive-Malware-WP.pdf
 In most cases the best analysis technique is a combination of the two. As a matter of fact debuggers are often used to unpack malware by setting breakpoints in the code and running it in a controlled environment until the real malware is extracted and loaded into memory, the resulting piece of code can then be dumped to disk and statically analyzed. 
 
 \section{Evasive Malware}
