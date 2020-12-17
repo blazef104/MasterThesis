@@ -36,6 +36,7 @@ The \textbf{PANDA} plugins directly used for this project are:
 \end{itemize}
 
 Newer versions of windows are not supported by many of these plugins therefore in order to perform the analysis it was decided to use the most recent supported version which is Windows 7 32 bit.
+Moreover as cited before, in order for the \textbf{PANDA} plugins to work, it is necessary to use QEMU without the KVM acceleration, this greatly lowers the performance of the system as the instrumentation system introduces a high overhead in the emulation and translation phase. 
 
 \subsection{System call hooking}
 
@@ -147,17 +148,12 @@ This is an effective method to patch various system calls and can easily be expa
 
 
 \subsection{CPUID hooking}
-\todo{review the below and properly divide in subsections}
-Patching other virtualization artifacts such as library calls and CPUID instructions is a more complex task as there are no available plugins that perform the same task as the syscall2. It was therefore decided to switch to python this, as mentioned before, has some other advantages such as the ability to run a complete simulation by having complete control over the virtual machine from the python script. Moreover one of the advantages of the python library is that it has a builtin mechanism for detecting the program that is running simply by passing its name to the python function, removing the need to implement a custom function as it has been done with the C plugin.
 
-It must be noted that all the flexibility that python provides on the management and interaction side is at the cost of performance therefore simulations run using the python script have a much lower performance than the native ones. Moreover as cited before in order for the \textbf{PANDA} plugins to work it is necessary to use QEMU without the KVM acceleration, this further lowers the performance of the system. 
+A robust detection technique employed by malware involve taking advantage of the information provided by the \lstinline{CPUID} instruction as detailed in Section \ref{sec:evmal}. In order to patch the values returned by this instruction it is possible to use a callback already available in \textbf{PANDA}: \lstinline{PANDA_CB_GUEST_HYPERCALL}. This callback is used by the taint plugin to control execution on the host, the way it is implemented is that the callback is triggered each time a \lstinline{CPUID} instruction is generated on the host. Unlike most of the other callbacks that return void this one has bool as return type. This means that the function implementing the callback should return \textit{True} if the hypercall has been processed by the plugin, \textit{False} otherwise. If the function returns \textit{True} \textbf{PANDA} will skip the execution of \lstinline{CPUID} and, instead, assume that the user has handled the instruction and populated the various registers. 
 
-Pypanda uses Python decorators\footnote{\url{https://wiki.python.org/moin/PythonDecorators}} to implement callbacks and PPP functions, a decorator is a way of altering the functionality of functions, methods or classes without having to directly interact with the source code and avoiding repetitions. In Python decorators are defined with the \lstinline{@} symbol at the beginning of the line, the following function will then alter, replace or extend the one specified after the \lstinline{@}. In this particular case decorators let the user specify the function that should be run when the event defined by the callback happens. 
+Taking advantage of \lstinline{PANDA_CB_GUEST_HYPERCALL} it was possible to write a function to read the various parameters that \lstinline{CPUID} takes as input in \lstinline{EAX} and then act accordingly. The function can be seen in Figure \ref{fig:cpuidpat}, when the value of \lstinline{EAX} is 1 the function will simply replace the output of the instruction in \lstinline{ECX} with the value 0. This did not pose any problem during the simulation however if the malware needs any of the other information available in the \lstinline{ECX} registry this logic can quickly be modified by xor-ing the content of \lstinline{ECX}, after it is populated by \lstinline{CPUID}, with 0x80000000 (\lstinline{panda.arch.set_reg(cpu, "ECX", ecx^0x80000000)}). In the same way the relevant registers are zeored also for the Hypervisor Brand and CPU Brand instructions.
 
-One of the detection techniques involve taking advantage of the information provided by the CPUID instruction as detailed in Section \ref{sec:evmal}. This particular instruction has a well defined callback in \textbf{PANDA} as it is used also by the taint plugin to perform actions inside the guest. The callback triggered by this instruction is \lstinline{PANDA_CB_GUEST_HYPERCALL}, the function implementing this callback should return \textit{True} if the hypercall is "processes", meaning that the plugin has already computed the result of CPUID, and \textit{False} otherwise. If the value returned is \textit{True} then the execution of the real CPUID instruction is skipped.
-
-This allowed to write a function that reads the various parameters that CPUID takes as input in EAX and then acts accordingly. The function can be seen in Figure \ref{fig:cpuidpat}, when the value of EAX is one the function will simply replace the output of the instruction in ECX with the value 0. This did not pose any problem during the simulation however if the malware needs any of the other information available in the ECX registry this logic can quickly be modified by xor-ing the content of ECX, after it is populated by CPUID, with 0x80000000 (\lstinline{panda.arch.set_reg(cpu, "ECX", ecx^0x80000000)}). In the same way the relevant registers are zeored also for the other options.
-
+\todo{put the C plugin instead of the python one}
 \begin{figure}[htp]
 \centering
 \begin{lstlisting}[language=Python] 
@@ -172,6 +168,7 @@ def tt(cpu):
         print("CPUID Vendor")
         panda.arch.set_reg(cpu, "ECX",0)
         panda.arch.set_reg(cpu, "EDX",0)
+        return True
     elif eax >= 0x80000002 and eax<=0x80000004:
         print("CPUID Brand")
         panda.arch.set_reg(cpu, "EAX",0)
@@ -188,12 +185,29 @@ def tt(cpu):
 
 \subsection{API hooking}
 
-The second part of the python plugin is a bit more complicated as it requires to hooks some specific functions in a library on the system. As the libraries are loaded at a different address each time it is necessary to first find out the right address at which the library will be loaded, then the offset of the function to be hooked must be added to the base address of library and finally it is possible to set the desired breakpoint. However, it must be noted that in order for the breakpoint to work the code of the library must have been already loaded in memory. 
+Patching other virtualization artifacts such as library calls and RDTSC instructions is a more complex task as there are no available plugins or callbacks specific for such events. In order to perform API hooking It was decided to switch to python this, as mentioned before, has some other advantages such as the ability to run a complete simulation by having complete control over the virtual machine from the python script. Moreover one of the advantages of the python library is that it has a builtin mechanism for running callbacks only when a specific program is running simply by passing the process name to the python function. In addition to this the pypanda interface supports enabling and disabling callbacks dynamically, this mechanism helps to mitigate some of the overhead introduced by enabling relevant function only when specific events happen on the system.
 
-In order to find the base address of the libraries loaded in the system it is possible to use the pypanda helper function \lstinline{panda.get_mappings(cpu)}, this is based on the osi plugin and will return as output a dictionary containing the 
-libraries loaded in the system in that precise moment. This implies that if the function is called while a given executable is running it will return the libraries loaded by that executable. 
+It must be noted that all the flexibility provided by python on the management and interaction side is at the cost of performance therefore, simulations run using the python script have a much lower performance than the native ones. 
 
-The function patched by the plugin is contained inside the \textit{kernel32.dll} library although the process is identical for any other library. In order to place the hook in the correct place it is important to first find out the offset of the function that will be hooked inside the library, this can be easily accomplished by opening the dll with pestudio which will give the offset of all the functions exported by the dll as it can be seen in Figure \ref{fig:pestudio}. In this case the \lstinline{GetSystemInfo} function is the one that is called by ParanoidFish in order to get the number of processors. The subsequent paragraph will focus on this function. 
+\todo{move this to panda section?:
+
+Pypanda uses Python decorators\footnote{\url{https://wiki.python.org/moin/PythonDecorators}} to implement callbacks and PPP functions, a decorator is a way of altering the functionality of functions, methods or classes without having to directly interact with the source code and avoiding repetitions. In Python decorators are defined with the \lstinline{@} symbol at the beginning of the line, the following function will then alter, replace or extend the one specified after the \lstinline{@}. In this particular case decorators let the user specify the function that should be run when the event defined by the callback happens. 
+}
+
+This python plugin is a bit more complicated as it requires to hook some specific functions in a library on the system. As the libraries are loaded at a different address each time it is necessary to first find out the right address at which the library will be loaded, then the offset of the function to be hooked must be added to the base address of library and finally it is possible to set the desired breakpoint. It must be noted that in order for the breakpoint to work the code of the library must have been already loaded in memory. 
+
+The steps taken in this plugin to correctly place hooks and patch artifacts in the system can be sum up in the following points:
+
+\begin{itemize}
+    \item Find the offset of the function to be hooked in the right library. This can be done offline as it involves statically inspecting the library.
+    \item Find the base address at which the library is loaded in the system at run time.
+    \item Find out when the code of the library is loaded in virtual memory.
+    \item Place the hook at base address+offset.
+\end{itemize}
+
+As the \lstinline{GetSystemInfo} function from \textit{kernel32.dll} is the one called by ParanoidFish in order to get the number of processors, the process described in the rest of the paragraph is focused on this function. However, the process is identical for any other function and library.
+
+In order to place the hook in the correct place it is important to first find out the offset of the function to be hooked inside the library, this can be easily accomplished by opening the dll with pestudio which will give the offset of all the functions exported by the dll as it can be seen in Figure \ref{fig:pestudio}. In the case of \lstinline{GetSystemInfo} on the version of \textit{kernel32.dll} running on the test system the offset is \lstinline{0x53728}.
 
 \noindent
 \begin{figure}[htp]
@@ -203,7 +217,8 @@ The function patched by the plugin is contained inside the \textit{kernel32.dll}
 \label{fig:pestudio}
 \end{figure}
 
-Subsequently in order to find the base address at which \textit{kernel32.dll} is loaded it is possible to place a breakpoint on the \lstinline{NtMapViewOfSection} system call using the syscalls2 plugin. The mentioned system call is used by a process to map a file into its memory address space, therefore each time a library is loaded a custom function will be called. This function, detailed in Figure \ref{fig:ntmap}, is then responsible to check if the loaded library corresponds to the one in which the function to be hooked resides. Once a match is found the function will in turn enable a memory callback (\lstinline{PANDA_CB_VIRT_MEM_BEFORE_READ}) and then disable itself.
+
+Subsequently the base address of the libraries loaded in the system must be found. In order to do this the pypanda helper function \lstinline{panda.get_mappings(cpu)} was used. Such function is based on the osi plugin and will return as output a dictionary containing the libraries loaded in the system in that precise moment. This implies that the function will return the libraries loaded by the executable running at the time it was called. By combining it with the syscalls2 plugin it is therefore possible to find out when a specific program is starting to load libraries in the system. In particular the following approach was used: leveraging syscalls2 PPP a callback was placed on the execution of \lstinline{NtMapViewOfSection}. This system call is used by a process to map a file into its memory address space, which is the case of loading libraries from disk. The function designed to execute when the syscall takes place can be seen in Figure \ref{fig:ntmap}. In there if the process running matches the target one the loaded libraries will be extracted and compared against the one containing the api function to be hooked. Once a match is found the function will in turn enable a memory callback \lstinline{cb1} of type \lstinline{PANDA_CB_VIRT_MEM_BEFORE_READ} and then disable itself.
 
 \begin{figure}[htp]
 \centering
@@ -211,7 +226,6 @@ Subsequently in order to find the base address at which \textit{kernel32.dll} is
 @panda.ppp("syscalls2", "on_NtMapViewOfSection_return", name="ntmap")
 def ntmap(cpu, pc, SectionHandle,  ProcessHandle, BaseAddress, ZeroBits, CommitSize, SectionOffset, ViewSize, InheritDisposition, AllocationType, Win32Protect):
     proc = panda.get_process_name(cpu)
-    #print("PC 0x{:x}".format(pc))
     print(proc)
     if proc == process_name:
         mappings = panda.get_mappings(cpu)
@@ -227,8 +241,6 @@ def ntmap(cpu, pc, SectionHandle,  ProcessHandle, BaseAddress, ZeroBits, CommitS
                 si = mapping.size
                 print("Enabling memory callback")
                 panda.enable_callback("cb1")
-                print("Enabling hypercall callback")
-                panda.enable_callback("hyper")
                 print("Disabling MapViewOfSections hook")
                 panda.disable_ppp("ntmap")
 \end{lstlisting}
@@ -236,11 +248,24 @@ def ntmap(cpu, pc, SectionHandle,  ProcessHandle, BaseAddress, ZeroBits, CommitS
 \label{fig:ntmap}
 \end{figure}
 
-The memory callback is necessary as when the \lstinline{NtMapViewOfSection} function is called the library is not yet loaded into the reserved virtual memory and therefore placing an hook at an address in that range will not work as it will be overwritten when the content of the dll is loaded. Instead by monitoring the reserved portion of memory for a read operation we will be sure that when the read takes place the code will have been loaded in memory and therefore the hook can be place safely. 
+The memory callback can be seen in Figure \ref{fig:cb1}. It is necessary as when the \lstinline{NtMapViewOfSection} function is called the library is not yet loaded into the reserved virtual memory and therefore placing an hook at an address in that range will not work as it will be overwritten when the content of the dll is loaded. Instead, by monitoring the reserved portion of memory for a read operation, we will be sure that when the read takes place the code will have been loaded in memory and therefore the hook can be place safely. 
 
-As mentioned above the function that has been hooked in the python plugin is \lstinline{GetSystemInfo}, such function is exported by \textit{kernel32.dll}. However, it is actually implemented inside \textit{kernelbase.dll}. Such function is actually really simple and takes as input a pointer to a \lstinline{SYSTEM_INFO} structure that will hold the results, the fields of the structure can be seen in Figure \ref{fig:sysinfo}. The content of this structure will be populated after the function executes therefore in order to correctly modify the \lstinline{dwNumberOfProcessors} field, which is the one checked by ParanoidFish, it is necessary to obtain the return address at which the function will jump after the execution. In this way the structure will have been already populated and the fields can be safely modified.
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=Python] 
+@panda.cb_virt_mem_before_read(name="cb1", procname=process_name, enabled=False)
+def virt_mem_after_read(cpu, pc, addr, size):
+    if (addr > base and addr < base+si) and base !=0 and si !=0:
+        panda.update_hook("sysinfohook",base+0x53728) # offset of GetSystemInfo
+        panda.enable_hook("sysinfohook")
+        panda.disable_callback("cb1")
+        
+\end{lstlisting}
+\caption{memory callback cb1}
+\label{fig:cb1}
+\end{figure}
 
-This can be achieved by saving the return address saved on the stack when the function is called and placing a breakpoint on such address. In this way the address of the structure can be extracted from the stack once the breakpoint is hit and then the \lstinline{dwNumberOfProcessors} field can be modified.  
+The\lstinline{GetSystemInfo} function is actually really straight forward as it takes in input a pointer to a \lstinline{SYSTEM_INFO} structure that will hold the results, the fields of the structure can be seen in Figure \ref{fig:sysinfo}.
 
 \begin{figure}[htp]
 \centering
@@ -268,7 +293,12 @@ typedef struct _SYSTEM_INFO {
 \label{fig:sysinfo}
 \end{figure}
 
-As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis the record and replay actions have been automated inside the python script. To achieve this the hooks2 plugin was used, such plugin is designed to substitute the hooks one although it is not yet finished it already provides some useful callbacks. In particular the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording, some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in \ref{fig:startstop}
+The content of this structure will be populated after the function executes therefore in order to correctly modify the \lstinline{dwNumberOfProcessors} field, which is the one checked by ParanoidFish, it is necessary to obtain the return address at which the function will jump after the execution. In this way the structure will have already been populated and the fields can be safely modified.
+
+This can be achieved by saving the return address placed on the stack when the function is called and setting a breakpoint on such address. In this way the address of the structure can be extracted from the stack once the function returns and then the \lstinline{dwNumberOfProcessors} field patched.  
+
+
+As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis the record and replay actions have been automated inside the python script. To achieve this the hooks2 plugin was used, such plugin is designed to substitute the hooks one. Although it is not yet finished it already provides some useful callbacks, in particular the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording. Some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in \ref{fig:startstop}
 
 \begin{figure}[htp]
 \centering
@@ -298,9 +328,100 @@ def end_rec(cpu, procname, asid, pid):
 
 \subsection{Faking time results}
 
+Another important fingerprinting technique consists in checking the Time Stamp Counter (TSC) of the system in order to check the time elapsed between different instructions. Most CPUs provide a dedicated instruction to access the TSC called RDTSC, the most common fingerprinting techniques involve checking the time elapsed between two subsequent execution of RDTSC or fingerprinting the time it takes for a VM Exit to happen. A simple VM exit can be generated with CPUID as it is a privileged instruction as explained in Chaper \ref{chap:1}.
 
+One of the limitation of \textbf{PANDA} is that it does not provide a callback able to intercept all the types of hypervisor call such as CPUID and RDTSC but, instead, CPUID is the only one associated with \lstinline{PANDA_CB_GUEST_HYPERCALL}. Therefore, in order to manipulated the TSC of the emulated system, it was necessary to introduce some modifications inside the \textbf{PANDA} code base an in particular to add a new callback specifically dedicated to the RDTSC instruction. 
 
+\textbf{PANDA} already provides the possibility to create Plugin to Plugin interfaces which are particular types of callbacks. However, those can only be based on functions already exposed by the \textbf{PANDA} api which does not provide the necessary level of control over the emulated architecture. Instead a new "native" callback was created for TSC handling named \lstinline{PANDA_CB_RDTSC}. 
+
+In order to do this it is first necessary to understand how QEMU handles the TSC counter for the guest Operating System and how \textbf{PANDA} callbacks works internally. On this last point it was not possible to find any reference about extending \textbf{PANDA} functionalities inside the documentation and therefore the source code had to be manually interpreted in order to find out where the modifications should take place.
+
+The files involved in the creation of "native" callbacks are the following: 
+
+\begin{itemize}
+    \item \lstinline{./panda/include/panda/callbacks/cb-defs.h} this header file holds the declaration of the \lstinline{panda_cb_type} type as well as a union of all possible callback function types.
+    
+    The modifications introduced in this file in order to support a new callback can be seen in Figure \ref{fig:mod1}.
+    
+    \begin{figure}[htp]
+    \centering
+    \begin{lstlisting}[language=C]
+    typedef enum panda_cb_type {
+        [...]
+        PANDA_CB_RDTSC, // <- New callback
+        PANDA_CB_LAST
+    } panda_cb_type;
+    
+    // Union of all possible callback function types
+    typedef union panda_cb {
+        [...]
+        bool (*rdtsc)(CPUState *env, uint64_t val); // <- New callback
+    } panda_cb;
+    \end{lstlisting}
+    \caption{\textbf{cb-defs.h} modifications}
+    \label{fig:mod1}
+    \end{figure}
+        
+    \item \lstinline{./panda/include/panda/callbacks/cb-support.h} this header file contains the signatures for the \textbf{PANDA} callback helper functions. The helpers essentially iterate over the list of registered callbacks and invoke them with the appropriate arguments. In this file was added the signature of the new callback helper function: 
+    \lstinline{bool panda_callbacks_rdtsc(CPUState *env, uint64_t val);}
+    
+    \item \lstinline{./panda/src/cb-support.c} this file contains the description of how the callback should be build. In particular teh \lstinline{cb-macros.h} file defines some custom functions: \lstinline{MAKE_CALLBACK} and \lstinline{MAKE_REPLAY_ONLY_CALLBACK} that will take care of generating the callback helper function. The following line was added to this file: \lstinline{MAKE_CALLBACK(bool, RDTSC, rdtsc, CPUState*, env, uint64_t, val);}
+    
+\end{itemize}
+
+Once the callback has been defined in the above mentioned \textbf{PANDA} files it can be used inside the code. In particular in order for a callback to work it must specified at which point of the emulation the callback should be invoked. For example the \lstinline{PANDA_CB_BEFORE_BLOCK_EXEC}, which is called before a basic block is executed(Figure \ref{fig:calls}), is implemented with the \lstinline{panda_callbacks_before_block_exec(CPUState *env, TranslationBlock *tb);} which is then called in the \lstinline{cpu_tb_exec} function inside the main emulator file (\lstinline{./cpu-exec.c}).
+
+In the case of RDTSC it was first necessary to track down how QEMU manages such counter in the virtual CPU. There are 3 different places in which the TSC counter is managed:
+
+\begin{itemize}
+    \item The \lstinline{cpu_get_ticks} function returns the time elapsed inside the VM. This function is implemented in \lstinline{./cpus.c} and is directly connected to the host one as it calls the \lstinline{cpu_get_host_ticks}.
+    \item The above function is then called in the \lstinline{cpu_get_tsc} which is the function called in the i386 cpu implementation to handle the tsc counter. 
+    \item Lastly in the \lstinline{./target/i386/misc_helper.c} there is a function called \lstinline{helper_rdtsc} which takes care of handling the RDTSC instruction inside the guest. This appears to be the best place in which to place the callback function. As a matter of fact this is the same file in which the CPUID hooking function is placed. 
+\end{itemize}
+
+The logic to implement this callback is partially inspired to the one used in the \lstinline{PANDA_CB_GUEST_HYPERCALL}. The \lstinline{panda_callbacks_rdtsc} function is called inside \lstinline{helper_rdtsc}, the return type of the callback is boolean meaning that the plugin using it can signal if RDTSC has been handled or not. In particular, if the callback returns \textit{true}, the values of TSC are not copied in the RAX and RDX registers but it is assumed that the plugin has taken care of populating the registers with the correct value. On the other hand, if the callback returns \textit{false}, the normal execution continues and the registers are populated with the correct values. 
+
+The TSC value is also passed to \lstinline{panda_callbacks_rdtsc} under the \lstinline{val} parameter. In this way the plugin has a direct and convenient access to the Timestamp that would have been used to populate the registers and can manipulate it accordingly.
+
+The function responsible to patch RDTSC in the plugin can be seen in Figure \ref{fig:rdtscpatch}. The approach taken here was to bring down TSC difference by dividing the value by an arbitrary number. Such number was calculated empirically and depends is dependant on the system running and on the number of plugins loaded as the execution time will vary based on the load of the emulated system.
+
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=C]
+bool rdtsc(CPUState *cpu, uint64_t val){
+    if (rdtsc_patch==1){
+        if (check_pid(cpu,tname)){ // we need this here otherwise it will segfault
+            val=val/10000;
+            EAX = (uint32_t)(val);
+            EDX = (uint32_t)(val >> 32);
+            printf("[DEBUG] rdtsc patched!\n");
+            return true;
+        }
+    }
+    return false;
+}
+\end{lstlisting}
+\caption{\textbf{cb-defs.h} modifications}
+\label{fig:rdtscpatch}
+\end{figure}
+
+This plugin can also be combined with CPUID in order to specifically patch RDTSC if it is called to fingerpint the time taken by a VM Exit to be handled. 
 
 \section{Results}
 
-By combining the above plugins 
+By combining the above plugins it was possible to achieve satisfactory results with the two reference tools: ParanoidFish and Al-Khaser. 
+
+Moreover a test program was written in order to test RDTSC timing and asses if the patching function was working efficiently.
+
+In particular in Figure \ref{fig:rdtsc1} it is possible to see the effects of the \lstinline{timing_patch} plugin on the test executable (\textit{cptest.exe}).
+
+\begin{figure}%
+    \centering
+    \subfloat[\centering vanilla system]{{\includegraphics[width=0.5\linewidth]{images/cptest2.png} }}%
+    \subfloat[\centering plugin]{{\includegraphics[width=0.5\linewidth]{images/cptest3.png} }}%
+    \caption{Results of running RDTSC without the patch (a) and with the \lstinline{timing_patch} plugin applied (b)}%
+    \label{fig:rdtsc1}%
+\end{figure}
+
+
+\todo{Paranoid and al-khaser results}
