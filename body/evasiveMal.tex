@@ -5,6 +5,10 @@
 
 \daniele{Add introductory text on the importance of having efficient and semantically rich techniques for analyzing malware, the different trade-offs for different levels of inspection, and the heterogeneous alternatives available}
 
+The goal of malware analysis is to analyze a suspicious binary to determine its functionalities and extract very specific behaviour patterns that can help identify the presence of such binary in the network. This collection of interactions between the sample and the environment is called Indicator of Compromise (IoC).
+
+There are many different methods that can be used for malware analysis however they fall into two main categories: Static and Dynamic analysis. 
+
 \section{Static and Dynamic Approaches}
 There are two types of analysis techniques that can be used to fully understand and dissect a malicious piece of code.
 
@@ -66,6 +70,8 @@ In addition to this calling \textit{CPUID} with 0x40000000 as parameter will ret
 
 Another interesting instruction is \textit{RDTSC} \footnote{\url{https://c9x.me/x86/html/file_module_x86_id_278.html}} this is used to read the processor timestamp counter, which is a 64 bit values that stores the number of cpu cycles elapsed since the last reset. Lower bits are stored in the \textit{EDX} register while higher bits are stored in the \textit{EAX} register. The difference between two subsequent executions of this instruction on a physical CPU will be low while it will be a much higher number on virtual CPUs.
 
+Both CPUID and RDTSC are privileged instructions, this means that they can only be executed in kernel mode, if they are executed in user mode the CPU will generate a trap. If such instructions are executed from inside a Virtual Machine a VM Exit event is generated and the control is given to the Hypervisor. Fingerprinting the time it takes to perform a VM Exit is another method used by evasive malware to detect the presence of a virtual machine. However it must be noted that RDTSC alone is not sufficient to reliably generate a VM Exit event, as a matter of fact this is a conditionally exiting instruction meaning that the event will be generated only under specific circumstances. On the other hand CPUID is an unconditionally exiting instruction and therefore a VM Exit will occur each time the instruction is executed. Therefore the mechanism used by malware to fingerprint the system consists in chaining a CPUID and RDTSC instruction and comparing it to a pure RDTSC run, if the difference is above a certain threshold then the presence of a virtual machine is detected.
+
 On the other hand \textbf{Execution Artifacts} are very dependant on the virtualization system used and can be found in different places of the system. One of the most obvious artifact is the MAC Address of the network interfaces which, by default, is set to well known values by all the different Virtualization Software as in Figure \ref{fig:vms}.
 
 \noindent
@@ -102,7 +108,13 @@ Moreover other structures like ACPI tables, SMBIOS strings as well as Disk Size 
 \section{QEMU and Emulation Artifacts}
 \daniele{give some context on QEMU, explain why relevant (you will say it in the introduction, but every chapter should be self-contained so to  speak), how dynamic binary translation behind it works, and expand the information you already have below}
 
-QEMU due to its nature is one of the virtualization systems with the lowest footprint on the guest. Taken directly from the Al-Khaser github repository\footnote{\url{https://github.com/LordNoteworthy/al-khaser}} the artifacts used to fingerprint QEMU are the following:
+
+QEMU is an open source full system emulator that is very popular for malware analysis. It is particularly interesting as it can emulate different CPU architectures and therefore samples form heterogeneous systems can be run on top of a single architecture. This not only simplifies the analysis but also allows a deep inspection of the system due to the fact that the CPU and other hardware is emulated.
+
+Although QEMU emulates the hardware, therefore introducing some very peculiar artifacts at low level, it is also one of the virtualization systems with the lowest footprint on the guest.
+
+
+Taken directly from the Al-Khaser github repository\footnote{\url{https://github.com/LordNoteworthy/al-khaser}} the artifacts used to fingerprint QEMU are the following:
 
 \begin{itemize}
     \item \lstinline{HARDWARE\DEVICEMAP\Scsi\Scsi Port 0\Scsi Bus 0\Target Id 0\Logical Unit Id 0 (Identifier) (QEMU)}
