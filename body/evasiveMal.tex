@@ -30,9 +30,25 @@ The Static Analysis is a powerful technique however for some more advanced piece
 
 \daniele{Too dry: your thesis is around dynamic analysis! Detail the different execution technologies available to date, and emphasize why whole-system emulation is important for fine-grained analysis of malware and in general for software security topics (e.g. for whole-system information flow tracking, you can cite the DECAF papers}
 
-\textit{Dynamic analysis} is the process of running the malicious program in a controlled environment, this is usually a virtual machine with proper measures in place to avoid external communication and instead capture and analyze network traffic. Such virtual machines are also equipped with introspection tools such as \textit{process monitor, process explorer, fakenet-ng} and similar allowing the malware analyst to deeply investigate the behaviour of a malicious program.
+\textit{Dynamic analysis} is the process of running the malicious program in a controlled environment in order to collect as many information as possible about the behaviour of a specific program. There are different approaches that can be taken in order to perform an effective Dynamic analysis: diffing, monitoring, tracing and debugging. The more a method is comprehensive and powerful the less it is easy to use or to implement.
 
-This kind of analysis involves running the sample with a debugger attached, a debugger allows the analyst to inspect the internal structure of the machine at runtime having direct access to CPU registers, process memory and allowing the user to modify the control flow of a program using breakpoints, inserting custom instructions and modify the memory during execution. 
+\begin{itemize}
+    \item \textbf{Diffing} consists of comparing the difference between a clean system and one in which the malware has run. This is usually achieved on a virtual machine using snapshots. However this can be done also targeted on specific parts of the system such as the windows registry or important folders. In this way it is easy to find artifacts and manipulation left on the system by the malware such as persistence through the memory. On the other hand, however, this methods is not able to capture artifacts that are removed from the malware during execution.  
+    
+    \item \textbf{Monitoring} consists of carefully monitoring the system and capture every change on it or any network traffic that takes place after the malware is executed. In this way it is possible to have a complete overview of every action that the malware is performing on the machine. However, the data gathered in this way often have a great amount of noise and therefore needs to be filtered out and carefully examined to extract only relevant information.
+    
+    \item \textbf{Tracing} consists of hooking important API or System Calls in the system in order to capture important events. In this way however, it is possible to achieve a much deeper level of details compared to System Monitoring since it is possible to monitor each external function invoked on the system. Blending in Static and Dynamic analysis and providing useful information on the execution flow of the malware as well as on the low level interaction with the system. One of the disadvantages of this system is that it requires interpretation of the gathered information as well as to exclude data related to normal activity on the system.
+    
+    \item \textbf{Debugging} consists of attaching a specialized software to the malware and placing breakpoints in specific parts of the code in order to inspect the internal state of the program. This is particularly useful as it gives complete control over the execution of the malware therefore allowing to modify the internals of the machine such as processor registers, memory and so on. This approach however, requires to deeply understand the source code of the malware in order to identify the interesting execution branches and place breakpoints correctly. Malwares can easily check the presence of a debugger using a system call and can therefore change their behaviour accordingly, this poses further challenges to the analyst whom has to modify the environment to mask such artifact. 
+    
+\end{itemize}
+
+It is of paramount importance in this phase that the machine on which the malware runs is isolated from the network. The ideal situation would be to have a real machine that can be used to run the malware and then re-imaged every time after the analysis is complete. This has obviously some huge pitfalls in terms of performance and efficiency therefore, the best way to perform Dynamic Analysis nowadays is using a virtual machine. Such virtual machines will need to be configured in order to have proper measures in place to avoid external communication and stop the malicious program from spreading to other machines in the network. 
+
+Different level of analysis requires different amount of visibility and interaction of the analyst with the environment. In particular, in order to extract as many information as possible from an analyzed system it is necessary to have complete control of every single component.
+
+\todo{decaf paper on whole system emulation here}
+
 
 There are also ad-hoc sandboxes used to automatically run a malware and then collect all the different interactions with the system producing then a detailed report. This is often referred as automatic malware analysis and the most common sandboxes are cuckoo\footnote{\url{https://cuckoosandbox.org/}}, joe sandbox \footnote{\url{https://www.joesandbox.com/}} and VMRay \footnote{\url{https://www.vmray.com/}}. 
 \subsubsection{Other possible approaches}
@@ -40,7 +56,7 @@ There are also ad-hoc sandboxes used to automatically run a malware and then col
 \todo{has docker ever been used for malware analysis? \url{https://www.reddit.com/r/docker/comments/eakd50/help_can_i_safely_run_malware_inside_a_container/}
 \url{https://ieeexplore.ieee.org/abstract/document/9042158}}
 
-\daniele{On Linux they also use eBPF see for instance \url{https://github.com/aquasecurity/tracee}. There are approaches for bare-metal analysis, or with instrumentation done at firmware level (check the BluePill paper, there is a nice table and discussion of other methods). However I think those are a better fit for Chapter 2 rather than here.}
+\daniele{On Linux they also use eBPF see for instance \url{https://github.com/aquasecurity/tracee}. There are approaches for bare-metal analysis, or with instrumentation done at firmware level (check the BluePill paper, there is a nice table and discussion of other methods)}
 
 % take a look https://www.blackhat.com/docs/us-14/materials/us-14-Kruegel-Full-System-Emulation-Achieving-Successful-Automated-Dynamic-Analysis-Of-Evasive-Malware-WP.pdf
 In most cases the best analysis technique is a combination of the two. As a matter of fact debuggers are often used to unpack malware by setting breakpoints in the code and running it in a controlled environment until the real malware is extracted and loaded into memory, the resulting piece of code can then be dumped to disk and statically analyzed. 
