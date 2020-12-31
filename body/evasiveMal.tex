@@ -9,6 +9,14 @@ The goal of malware analysis is to analyze a suspicious binary to determine its 
 
 There are many different methods that can be used for malware analysis however they fall into two main categories: Static and Dynamic analysis. 
 
+\noindent
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\linewidth]{images/dynanalysis.png}
+\caption{Malware analysis techniques}
+\label{fig:mat}
+\end{figure}
+
 \section{Static and Dynamic Approaches}
 There are two types of analysis techniques that can be used to fully understand and dissect a malicious piece of code.
 
@@ -28,7 +36,7 @@ The Static Analysis is a powerful technique however for some more advanced piece
 
 \subsection*{Dynamic Analysis}
 
-\daniele{Too dry: your thesis is around dynamic analysis! Detail the different execution technologies available to date, and emphasize why whole-system emulation is important for fine-grained analysis of malware and in general for software security topics (e.g. for whole-system information flow tracking, you can cite the DECAF papers}
+%\daniele{Too dry: your thesis is around dynamic analysis! Detail the different execution technologies available to date, and emphasize why whole-system emulation is important for fine-grained analysis of malware and in general for software security topics (e.g. for whole-system information flow tracking, you can cite the DECAF papers}
 
 \textit{Dynamic analysis} is the process of running the malicious program in a controlled environment in order to collect as many information as possible about the behaviour of a specific program. There are different approaches that can be taken in order to perform an effective Dynamic analysis: diffing, monitoring, tracing and debugging. The more a method is comprehensive and powerful the less it is easy to use or to implement.
 
@@ -45,13 +53,23 @@ The Static Analysis is a powerful technique however for some more advanced piece
 
 It is of paramount importance in this phase that the machine on which the malware runs is isolated from the network. The ideal situation would be to have a real machine that can be used to run the malware and then re-imaged every time after the analysis is complete. This has obviously some huge pitfalls in terms of performance and efficiency therefore, the best way to perform Dynamic Analysis nowadays is using a virtual machine. Such virtual machines will need to be configured in order to have proper measures in place to avoid external communication and stop the malicious program from spreading to other machines in the network. 
 
-Different level of analysis requires different amount of visibility and interaction of the analyst with the environment. In particular, in order to extract as many information as possible from an analyzed system it is necessary to have complete control of every single component.
+Different level of analysis requires different amount of visibility and interaction with the environment. In particular, in order to extract as many information as possible from an analyzed system, it is necessary to have complete control of every single component. For this reason Virtual Machines created on a Full System Emulation environment are particularly suited for the job as they allow for fine grained control over the simulation. In such system it is possible to place custom pieces of code in very specific points of the simulated hardware. This practice, called instrumentation, allows the analyst to instrument not only the malware but also the environment itself, in this way the analysis can be performed at different levels making it more efficient, rich and also completely transparent for the malware.
 
-\todo{decaf paper on whole system emulation here}
+For example Whole System Emulation allows the user to interact and control directly the emulated CPU making it easy to extract opcodes and make changes to a live program from outside the system. This is particularly important when analyzing malwares that attempt to detect and evade the analysis environment. 
 
+Dynamic as well as Static Analysis must be carried out by a single person which must dedicated many hours into deeply understanding and dissecting the malicious code. Although this is highly reliable and produces a great amount of information it is not scalable or efficient. For this reason some ad-hoc solutions to carry out an initial triage have been developed. Such solutions are dedicated virtual machines, called sandbox, inside which it is possible to safely run the malware. The analysis framework will then take care of performing different types of analysis, from network traffic to registry interaction, in order to determine the nature of the executable. This is often referred as automatic malware analysis, some solutions will simply produce a report detailing all the actions performed on a system by a specific executable other will try to perform some further analysis on such data in order to understand if the binary is malicious or not. Nowadays the most common sandboxes are: cuckoo\footnote{\url{https://cuckoosandbox.org/}}, joe sandbox \footnote{\url{https://www.joesandbox.com/}}, any.run\footnote{\url{any.run}} and VMRay \footnote{\url{https://www.vmray.com/}}. Most of these solutions provides web based user interfaces through which it is possible to submit samples to the underlying system and retrieve results of the analysis. 
 
-There are also ad-hoc sandboxes used to automatically run a malware and then collect all the different interactions with the system producing then a detailed report. This is often referred as automatic malware analysis and the most common sandboxes are cuckoo\footnote{\url{https://cuckoosandbox.org/}}, joe sandbox \footnote{\url{https://www.joesandbox.com/}} and VMRay \footnote{\url{https://www.vmray.com/}}. 
-\subsubsection{Other possible approaches}
+In most cases the best analysis technique is a combination of the Static and Dynamic ones. As a matter of fact debuggers are often used to unpack malware by setting breakpoints in the code and running it in a controlled environment until the real malware is extracted and loaded into memory, the resulting piece of code can then be dumped to disk and statically analyzed.
+
+\subsection{Other possible approaches}
+
+The two described method above requires that the analyst has acquired the executable of the malware and is able to dissect it on disk or run it in a safe environment. There are however some cases in which this is not possible, an example is file-less malware where the entire malicious code resides into memory and never touches the disk. In this case the analysis must be carried out on a snapshot of the system. 
+
+There are two different approaches when creating a snapshot of the memory: one is dumping the entire content of the ram on disk and then carry out the analysis on it. This has many advantages as it will contain, most likely, all the information needed to carry out a complete analysis. Moreover, this will include also kernel structures that will be fundamental when trying to reconstruct the execution of the malware in memory. Moreover, from such memory dump, it is possible to select the memory region in which the malicious code resides and perform a Static analysis on it. The disadvantage of this technique is that the dump file will be of the same size of the ram and only a small portion of it will be really useful for the analysis making it harder to handle and slowing down some analysis tools. 
+
+The volatility framework\footnote{https://github.com/volatilityfoundation/volatility} is the state of the art for this kind of analysis, it implements many different plugins that are capable of performing different types of analysis on a RAM dump file. 
+
+The second approach consists of creating a Full Memory Dump of a single program. Such file, as opposed to the above mentioned one, will contain only the portion of memory reserved to the specified executable. In this way some information about the system, such as the kernel structures, are lost but the produced file will be much smaller. This portion of memory, most of the times, will contain enough information to carry out full malware analysis of the malicious code.   
 
 \todo{has docker ever been used for malware analysis? \url{https://www.reddit.com/r/docker/comments/eakd50/help_can_i_safely_run_malware_inside_a_container/}
 \url{https://ieeexplore.ieee.org/abstract/document/9042158}}
@@ -59,14 +77,21 @@ There are also ad-hoc sandboxes used to automatically run a malware and then col
 \daniele{On Linux they also use eBPF see for instance \url{https://github.com/aquasecurity/tracee}. There are approaches for bare-metal analysis, or with instrumentation done at firmware level (check the BluePill paper, there is a nice table and discussion of other methods)}
 
 % take a look https://www.blackhat.com/docs/us-14/materials/us-14-Kruegel-Full-System-Emulation-Achieving-Successful-Automated-Dynamic-Analysis-Of-Evasive-Malware-WP.pdf
-In most cases the best analysis technique is a combination of the two. As a matter of fact debuggers are often used to unpack malware by setting breakpoints in the code and running it in a controlled environment until the real malware is extracted and loaded into memory, the resulting piece of code can then be dumped to disk and statically analyzed. 
-
+ 
 \section{Evasive Malware}
 \label{sec:evmal}
 
 As mentioned previously the Dynamic Analysis takes place inside a controlled environment. Having a real computer, isolated from the network and re-imaged every time that a sample is analyzed is the best scenario but also highly inefficient. There are different technologies, such as Virtual Machines, that are used nowadays to achieve the same results but with less effort, overhead and a great saving in terms of costs. 
 
 From an attacker prospective detecting if the current machine is a physical one or a virtual one can really make the difference as the more it takes for an analyst to reverse a sample the more it can stay in the wild and perform malicious actions. In addition to this, testing for the presence of a debugger installed in the system or attached to the program is another form of protection that is used by the malware to avoid the analysis process.
+
+\noindent
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\linewidth]{images/mal-fram.png}
+\caption{Malware analysis techniques against various malware types}
+\label{fig:mfrm}
+\end{figure}
 
 There are multiple techniques used to detect if a piece of code is running in an analysis environment. According to \cite{9018111} such techniques can be divided in two categories:
 \daniele{Inaccurate: red pills originally detected emulators, but you should say that now you can use them to detect anomalies when executing instructions or looking up the position of specific structures in memory (see VMware artifacts) on a hypervisor or any other dynamic execution platform that is not a bare-metal machine}
@@ -148,11 +173,27 @@ as well as the above mentioned \textit{CPUID} which will return specific strings
 
 \daniele{Explain why they are important, how they summarize what we learn from malware in the wild (so people can't tell you that you techniques are unlikely to be effective on the average sample in the wild), and mention other sources: VMDE, SEMS, the CheckPoint collections for VM detections and anti-debug tricks, elaborate on how some techniques are general and affect multiple execution technologies (e.g. slowdown measurements vs dynamic analysis)}
 
-There are available online different tools to perform automatic checks of the environment which aims to stress test the machine and verify how hidden is the analysis environment. The two most famous ones are Al-Khaser and Paranoid Fish\footnote{\url{https://github.com/a0rtega/pafish}}. Those tools are based on real techniques employed by malware to detect sandboxes and analysis environment and will run all the tests in sequence producing a final report of the passed and failed tests.
+The analysis environment must be carefully tested in order to discover possible artifacts that might be detected by the analyzed malware. Different tools have been created in order to carry out such checks. 
 
-Paranoid Fish is a slightly older project which appears not to be maintained anymore while Al-Khaser is the evolution of Paranoid Fish and features many more techniques. It is important to note that not all the implemented techniques are a reliable indicator of the presence of a Virtual environment. Some checks such as the disk size, number of cores or the ram size might still fail even on computers still in use today. 
+All these tools aims to collect as many evasion techniques as possible by extracting them from malware samples observed in the wild and regularly updated with new ones as soon as they are discovered. In this way it is possible to test the environment against all the different fingerprinting mechanisms available to the date. 
 
-\todo{Add screenshots of the frameworks} 
+The most famous testing frameworks are: 
+
+\begin{itemize}
+    \item \textbf{Paranoid Fish}\footnote{\url{https://github.com/a0rtega/pafish}} is one of the most complete tools. It employs many different techniques observed from malware in the wild to detect sandboxes and virtualization environments. Such techniques are based both on hardware characteristics such as disk or ram size as well as on specific API or System Calls. The last update of this tool was in 2016.
+    
+    \item \textbf{Al-Khaser}\footnote{\url{https://github.com/LordNoteworthy/al-khaser}} is the most complete and up to date tool available. This tools packs many features in order to stress test the system and run the most comprehensive analysis possible. It includes not only anti virtual machine checks but also anti-malware, anti-disassembly and dll/code injection techniques. The last update of this tool was in 2020.
+        
+    \item Virtual Machine Detection Enhanced (\textbf{VMDE})\footnote{\url{https://github.com/hfiref0x/VMDE}} aims to detect all types of virtual machine including whole system emulation. It relays on different detection mechanisms such as the hypervisor bit, the presence of specific objects in the system and other execution artifacts such as the presence of library modifications(hooking). The last update of this tool was in 2017.
+    
+    \item \textbf{SEMS}\footnote{\url{https://github.com/AlicanAkyol/sems}} is a test suite targeted at detecting Virtual machines, sandboxes as well as common analysis tools. It implements common techniques such as registry entries checking, pipes detection, files detection as well as special CPU instructions. The last update of this tool was in 2015.
+    
+    \item \textbf{InviZzzible}\footnote{\url{https://github.com/CheckPointSW/InviZzzible}} is a tool from CheckPoint that is based on the most common techniques. As opposed to the above ones this focuses on being future proof by giving the user the ability to add future tests in a simple way (via a json file). The last update of this tool was in 2019.
+    
+\end{itemize}
+
+All the above tools will run the tests in sequence and then produce a report at the end containing the results of the various tests. It must be noted however that not all the implemented techniques are a reliable indicator of the presence of a Virtual environment. Some checks such as the disk size, number of cores or the ram size might still fail even on some moderns computer. 
+
 
 \section{Remarks}
 \daniele{Now you should be paving the way on what you will describe in your thesis. In this chapter or in the next one you should draw also some comparison with hypervisor-based monitoring and instrumentation (DRAKVUF, Ether, etc) and explain that they do not help for some tasks that require whole-system emulation instead, or their instrumentation facilities are not flexible enough to allow some detailed analyses. If you do it in the next chapter, here you should be saying a few anticipatory things too.}

@@ -1,9 +1,22 @@
 \chapter{Introduction}
 
+Malicious Software (malware) has become increasingly common, and profitable, in the latest years. Usually malware are differentiated based on their goal: adware are the ones displaying advertisement on the user pc, spyware are the ones dedicated to monitoring the user, ransomware are the ones encrypting important files and asking for a ransom and so on. 
+
+Malware analysis is the process of analyzing a piece of malicious code in order to extract as many information as possible from it. This is especially valuable to understand the capabilities of a malware but also to extract useful Indicator of Compromise (IoCs) that can be leveraged by to detect and infection in a system. 
+
+In the past it was possible to trace a clear mark between different malware types based on their goal and their complexity. Adwares for example used to be really simple pieces of code, targeted to a broad group of people, hoping to generate the maximum profit. However, nowadays, even such pieces of malware started to become more sophisticated and to embed complex mechanism to avoid detection\cite{bitdef}.
+
+Malware analysis and detection is therefore a cat and mouse game in which the two parties engage in a never ending chase trying to keep up one with the other. For this reason it is particularly important that the analyst's arsenal is always up to date. One of the most important parts of the malware analysis process is dynamic analysis. This consists of running the malware in a controlled environment in order to observe its execution and interaction with the system.
+
+Modern malware, however, employ many different techniques in order to avoid detection and make the work of the analyst harder. A particularly effective techniques consists in fingerprinting the environment in order to detect the type of hardware and software, in this way the malware can decide if the environment resembles a real one or not and hide its real capabilities accordingly. As a matter of facts virtual machines are the core of the dynamic analysis process as they allow to run the malware on controlled and isolated environment. Complex analysis systems are built on top of Virtual Machines based on Whole System Emulation frameworks which allows to have fine grained control not only over the code that is being run but also on the hardware. This has many benefits; for example, since the hardware is emulated, it is possible to carry out malware analysis of many different samples, even the ones designed for a different architecture, on top of an arbitrary system. Moreover the ability to tap into different components and place custom pieces of code in very specific points of the emulation process, such as when the instructions are translated between one architecture and the other, allows to build very powerful and complex systems that are virtually invisible to the malware. 
+
+As a matter of fact every virtualization system will inevitably introduce some artifacts in the environment. These can be of different types depending where they are introduced, for example hardware artifacts are present due to the fact that the processors and other components are virtualized. On the other hand software artifacts are generated since some additional drivers are often required on the guest system in order to properly run. 
+
+The objective of this thesis is to enhance an existing malware analysis framework, PANDA, which is based on whole system emulation in order to make it completely transparent to the malware. In this way it is possible to leverage the newly created system to let malicious code reveal their real capabilities while running PANDA plugins to perform dynamic malware analysis.  
 
 
 \bigskip
-In \hyperref[chap:1]{Chapter~\ref*{chap:1}} malware analysis techniques will be introduced. The chapter will have a particular focus on evasive malwares as they poses particular challenges in the dynamic analysis process. Common evasive and fingerprinting techniques will be presented together with some environment testing suites. 
+In \hyperref[chap:1]{Chapter~\ref*{chap:1}} malware analysis techniques will be introduced. The chapter will have a particular focus on evasive malware as they poses specific challenges in the dynamic analysis process. Common evasive and fingerprinting techniques will be presented together with some environment testing suites. 
 
 
 \bigskip
