@@ -1,7 +1,8 @@
+% !TEX root = ../main.tex
 \chapter{panda-re}
 \label{chap:4}
 
-\textbf{Panda-re} or just \textbf{PANDA} (\textbf{P}latform  for  \textbf{A}rchitecture-\textbf{N}eutral  \textbf{D}ynamic  \textbf{A}nalysis) is a framework based on QEMU which provides a programmatic interface to perform deep virtual machine and operating system introspection. It has been designed to be a platform to perform reverse engineering of complex pieces of malware thanks to its ability to record and replay executions. However the functionality is obviously not limited to malware analysis but this framework can be used in all those cases requiring a deep understanding of how a software works or a specific type of analysis such as taint analysis. The typical workflow when using \textbf{PANDA} can be seen in Figure \ref{fig:wkflow}.
+\textbf{panda-re} or just \textbf{PANDA} (\textbf{P}latform  for  \textbf{A}rchitecture-\textbf{N}eutral  \textbf{D}ynamic  \textbf{A}nalysis) is a framework based on QEMU which provides a programmatic interface to perform deep virtual machine and operating system introspection. It has been designed to be a platform to perform reverse engineering of complex pieces of malware thanks to its ability to record and replay executions. However the functionality is obviously not limited to malware analysis but this framework can be used in all those cases requiring a deep understanding of how a software works or a specific type of analysis such as taint analysis. The typical workflow when using \textbf{PANDA} can be seen in Figure \ref{fig:wkflow}.
 
 \begin{figure}[htp]
 \centering
@@ -30,7 +31,7 @@ An exhaustive list of available \textbf{callbacks} can be found in the documenta
 
 A visual representation of the emulation stage at which the various callbacks are executed can be seen in Figure \ref{fig:calls}.
 
-\begin{figure}[htp]
+\begin{figure}[ht]
 \centering
 \includegraphics[width=\linewidth]{images/callback_diagram.png}
 \caption{Main callbacks and different triggering points. }
@@ -49,7 +50,7 @@ Moreover \textbf{PANDA} exposes two functions to interact with the Virtual Machi
 In addition to the above \textbf{PANDA} itself provides some default plugins to perform many different tasks and that can be used as the foundation to further expand analysis capabilities.
 
 
-\subsection{Plugin system}
+\subsection{Plugin System}
 
 The plugin system is the heart of PANDA, a plugin is a piece of code which extends panda functionalities in order to perform specific actions on the running system. Usually a plugin observe the what is happening in the system and either exposes some \textbf{callbacks} that can be used by other plugins or prints information to the user.
 
@@ -123,7 +124,7 @@ A recording can be taken via the QEMU monitor interface using the \lstinline{beg
 Plugins are generally used for analysis therefore they rarely modify directly the virtual machine environment but instead they focus on catching particular behaviours and logging it or perform some more analysis based on specific events happening inside the virtual machine. As mentioned before in order for the replay functionality to be used it is important that the plugin doesn't alter the control flow of the program, as a matter of fact due to the nature of \textit{rr} (\underline{deterministic} record and replay) if a replayed trace diverges from what has been recorder (for example the program takes a different conditional jump) it will no longer be able to continue the replay as it will not be able to find what should be replayed anymore. For this reason plugins that introduce modifications in the virtual machine, such as hiding specific virtualization artifacts, must be run on the live system. In the same way it is not possible to perform analysis that will make the execution diverge from the recording, this means for example that during the analysis of a malware the Command and Control communications must be deterministic and is not possible to record just 1 interaction with the C2 and then bruteforce all the possible commands during the replay.
 
 
-\subsection{Python bindings}
+\subsection{Python Bindings}
 
 In addition to the above mentioned plugins system \textbf{PANDA} exposes also a Python interface, this is referred to as \textbf{pypanda}. The documentation for the python package can be found at \url{https://panda-re.github.io/panda.html}. Such interface allows for better scriptability and to have faster prototyping. Everything that can be done with a "standard" C/C++ plugin can be accomplished with Python moreover, \textbf{pypanda} exposes some high level functions that can be used to write entire scripts to automatically run a self contained simulation.
 
@@ -139,7 +140,7 @@ There is a small overhead when utilizing \textbf{pypanda} due to the nature and 
 
 From the python interface it is possible to access not only \textbf{PPP} interfaces but also classical python callback, this as mentioned before allows for very complex interactions to be written in python. As a matter of fact there are different helper functions such as \lstinline{get_mappings, get_process_name, ...} that provides direct interfaces to other plugins such as OSI, hooks, taint and others. The function \lstinline{run} or \lstinline{run_replay} can then be used to run the simulation. Other helper functions include \lstinline{record} and \lstinline{end_record} used to control the recording, this allows to write python scripts that automatically run a simulation on the live system, records it, then runs some specific plugins on the recording. 
 
-\section{Advantages compared to its competitors}
+\section{Advantages over Competitors}
 
 The table in Figure \ref{fig:frcmp} provides an overview of the other analysis frameworks available. The most relevant ones have been briefly described in Chapter 2.5. 
 

@@ -8,7 +8,7 @@
 \usepackage{color}
 \usepackage{dirtree}
 \usepackage{framed}
-\usepackage{hyperref}
+\PassOptionsToPackage{hyphens}{url}\usepackage{hyperref}
 \usepackage{listings}
 % \usepackage{setspace}
 % \onehalfspacing
@@ -49,7 +49,7 @@ breaklines=true
   \end{shaded}
 }
 
-\newcommand{\daniele}[1]{\textcolor{blue}{\textsc{daniele>}~\textsf{#1}}\smallskip}
+\newcommand{\daniele}[1]{\textcolor{blue}{\footnotesize\textsc{daniele>}~\textsf{#1}}\smallskip}
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 % Commands for the titlepage

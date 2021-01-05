@@ -1,3 +1,4 @@
+% !TEX root = ../main.tex
 \chapter{Deceptive Box: PANDA meets evasive malware}
 \label{chap:5}
 
@@ -333,7 +334,7 @@ One of the limitation of \textbf{PANDA} is that it does not provide a callback a
 
 In order to do this it is first necessary to understand how QEMU handles the TSC counter for the guest Operating System and how \textbf{PANDA} callbacks works internally. On this last point it was not possible to find any reference about extending \textbf{PANDA} functionalities inside the documentation and therefore the source code had to be manually interpreted in order to find out where the modifications should take place.
 
-The files involved in the creation of "native" callbacks are the following: 
+The files involved in the creation of ``native'' callbacks are the following: 
 
 \begin{itemize}
     \item \lstinline{./panda/include/panda/callbacks/cb-defs.h} this header file holds the declaration of the \lstinline{panda_cb_type} type as well as a union of all possible callback function types.
@@ -398,7 +399,7 @@ bool rdtsc(CPUState *cpu, uint64_t val){
     return false;
 }
 \end{lstlisting}
-\caption{\textbf{cb-defs.h} modifications}
+\caption{\textbf{cb-defs.h} modifications\daniele{Nicer caption?}}
 \label{fig:rdtscpatch}
 \end{figure}
 
@@ -465,8 +466,10 @@ int main(){
 
 \begin{figure}%
     \centering
+%    \iffalse % [Daniele] it won't compile on my machine so I use this trick
     \subfloat[\centering vanilla system]{{\includegraphics[width=0.5\linewidth]{images/cptest2.png} }}%
     \subfloat[\centering plugin]{{\includegraphics[width=0.5\linewidth]{images/cptest3.png} }}%
+%    \fi
     \caption{Results of running RDTSC without the patch (a) and with the \lstinline{timing_patch} plugin applied (b)}%
     \label{fig:rdtsc1}%
 \end{figure}
@@ -475,12 +478,14 @@ Lastly in Figure\ref{fig:rdtsc1}(b) it is possible to see how the plugin is able
 
 \section{Results}
 
-In order to benchmark the newly created plugins it was decided to use the two most common and complete tools: ParanoidFish and Al-Khaser.
+In order to validate the newly created plugins it was decided to use the two most common and complete tools for assessing malware analysis environment against common evasion techniques: ParanoidFish and Al-Khaser.
 
 In Figure \ref{fig:res} it is possible to see how the execution of Paranoid Fish on a system with all plugins enabled compares to a vanilla execution. 
 
 In Figure \ref{fig:res1} it is possible to see how the execution of Al-Khaser compares to a vanilla execution. 
 
 
-It is possible to see how some tests are still flagged as failed. For example the disk one can easily be fixed by creating a bigger virtual hard disk. The WMI ones are particularly interesting as it requires a deep understanding of how WMI is treated inside windows and how it can be patched. A detailed discussion on this can be found in the next chapter. 
+It is possible to see how some tests are still flagged as failed. For example the disk one can easily be fixed by creating a bigger virtual hard disk. The WMI ones are particularly interesting as it requires a deep understanding of how WMI is treated inside Windows and how it can be patched. A detailed discussion on this can be found in the next chapter. 
 
+
+\daniele{Come up with clever ideas to extend this section or we will have big trouble :-) For instance start explaining how you defeat some evasions using the different components you developed, and how sometimes different components cooperate (rdtsc+cpuid VM exit case right?). You can show some snippets of the code from either suite (e.g. 2 from Al-Khaser and 1 from Paranoid fish) and detail how your plugin(s) craft the right fake answer.}
