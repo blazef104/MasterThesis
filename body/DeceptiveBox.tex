@@ -402,15 +402,66 @@ bool rdtsc(CPUState *cpu, uint64_t val){
 \label{fig:rdtscpatch}
 \end{figure}
 
-This plugin can also be combined with CPUID in order to specifically patch RDTSC if it is called to fingerpint the time taken by a VM Exit to be handled. 
+This plugin can also be combined with CPUID in order to specifically patch RDTSC if it is called to fingerprint the time taken by a VM Exit to be handled. 
 
-\section{Results}
+In order to test if this plugin was working and also test the performances of the fully emulated system it was necessary to write a custom test program. This can be found in Figure \ref{fig:rdttest}. The goal was to check the difference in time between two different calls of RDTSC in order to:
 
-By combining the above plugins it was possible to achieve satisfactory results with the two reference tools: ParanoidFish and Al-Khaser. 
+\begin{enumerate}
+    \item Define a baseline of the time taken by instructions to be executed on a bare metal system Figure \ref{fig:bmetal}.
+    \item Determine the time it takes to execute the same instruction under full system emulation Figure \ref{fig:rdtsc1}(a). This is particularly challenging as the more plugins are used in the system the more it takes for the entire emulation to run. The results in the Figure \ref{fig:rdtsc1}(a) were obtained with all the above created plugins loaded. 
+\end{enumerate}
 
-Moreover a test program was written in order to test RDTSC timing and asses if the patching function was working efficiently.
 
-In particular in Figure \ref{fig:rdtsc1} it is possible to see the effects of the \lstinline{timing_patch} plugin on the test executable (\textit{cptest.exe}).
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=C]
+#include <windows.h>
+#include <stdio.h>
+
+void test1(){
+    unsigned long long ret, ret1, ret2;
+	unsigned eax, edx;
+    for (int i=0;i<11;i++){
+        __asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
+        ret  = ((unsigned long long)eax);
+        __asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
+        ret1  = ((unsigned long long)eax);
+
+        printf("First call %llu\n",ret);
+        printf("Second call %llu\n",ret1);
+
+        printf("Difference %llu\n",ret1-ret);
+    }
+
+    __asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
+    ret  = ((unsigned long long)eax) | (((unsigned long long)edx) << 32);
+	
+	__asm__ volatile("cpuid" : /* no output */ : "a"(0x00));
+	
+	__asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
+	ret2  = ((unsigned long long)eax) | (((unsigned long long)edx) << 32);
+    printf("VM exit %llu\n",ret2-ret);
+}
+
+
+
+int main(){
+    printf("Calling test1\n");
+    test1();
+    getchar();
+    return 0;
+}
+\end{lstlisting}
+\caption{RDTSC testing program}
+\label{fig:rdttest}
+\end{figure}
+
+\begin{figure}%
+    \centering
+    \includegraphics[width=0.6\linewidth]{images/bmetal.PNG}%
+    \caption{Results of running RDTSC test program on a bare metal machine}%
+    \label{fig:bmetal}%
+\end{figure}
 
 \begin{figure}%
     \centering
@@ -420,5 +471,16 @@ In particular in Figure \ref{fig:rdtsc1} it is possible to see the effects of th
     \label{fig:rdtsc1}%
 \end{figure}
 
+Lastly in Figure\ref{fig:rdtsc1}(b) it is possible to see how the plugin is able to effectively patch the RDTSC instruction faking the result of that instruction by overwriting the values in the EAX and EDX registries. 
 
-\todo{Paranoid and al-khaser results}
+\section{Results}
+
+In order to benchmark the newly created plugins it was decided to use the two most common and complete tools: ParanoidFish and Al-Khaser.
+
+In Figure \ref{fig:res} it is possible to see how the execution of Paranoid Fish on a system with all plugins enabled compares to a vanilla execution. 
+
+In Figure \ref{fig:res1} it is possible to see how the execution of Al-Khaser compares to a vanilla execution. 
+
+
+It is possible to see how some tests are still flagged as failed. For example the disk one can easily be fixed by creating a bigger virtual hard disk. The WMI ones are particularly interesting as it requires a deep understanding of how WMI is treated inside windows and how it can be patched. A detailed discussion on this can be found in the next chapter. 
+

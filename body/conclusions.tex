@@ -2,6 +2,7 @@
 \label{chap:6}
 
 \section{Conclusions}
+
 As illustrated in the previous chapter with this this thesis it has been demonstrated how it is possible to use different techniques in order to write custom PANDA plugins. Such techniques can be used to modify the environment at run time and only for a very specific sample. In this way only the identified sample will receive the patched results while the rest of the system will remain untouched. This has two main benefits, the first one is that patching happens only when needed therefore avoiding to introduce an excessive overhead in the system. The second one is that 
 
 
@@ -11,3 +12,7 @@ As illustrated in the previous chapter with this this thesis it has been demonst
 The newly presented system will be completely transparent for the malware therefore different analysis techniques can be implemented on top of it. A future area of development of this system would be the integration with taint analysis. As a matter of fact PANDA provides in the official repository a plugin dedicated to this kind of analysis, \textit{taint2}. 
 
 Using such plugin it would be possible to create another one to trace how common red pills are handled inside the malware, in this way it would be possible to see how memory regions, strings and functions are treated internally.
+
+Moreover, as previously mentioned, even with the developed plugins the system is still failing to pass WMI related tests. WMI or Windows Management Instrumentation is an operating system interface exposed by Windows that allows programs to manage the Operating System both locally and remotely. The purpose of WMI allow for management information to be shared between different applications. In particular this interface implements an SQL like language to perform OS queries.
+
+This interface can be used to retrieve information from the underlying operating system. Due to the fact that it does not relay on system calls or API calls this behaviour would not be caught by the developed plugins. Instead, it is necessary to develop a custom plugin that will take care of hooking specific parts of the WMI handling part inside the Operating System and can therefore provide patched results. 
