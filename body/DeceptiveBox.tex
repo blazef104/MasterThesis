@@ -189,10 +189,7 @@ Patching other virtualization artifacts such as library calls and RDTSC instruct
 
 It must be noted that all the flexibility provided by python on the management and interaction side is at the cost of performance therefore, simulations run using the python script have a much lower performance than the native ones. 
 
-\todo{move this to panda section?:
-
 Pypanda uses Python decorators\footnote{\url{https://wiki.python.org/moin/PythonDecorators}} to implement callbacks and PPP functions, a decorator is a way of altering the functionality of functions, methods or classes without having to directly interact with the source code and avoiding repetitions. In Python decorators are defined with the \lstinline{@} symbol at the beginning of the line, the following function will then alter, replace or extend the one specified after the \lstinline{@}. In this particular case decorators let the user specify the function that should be run when the event defined by the callback happens. 
-}
 
 This python plugin is a bit more complicated as it requires to hook some specific functions in a library on the system. As the libraries are loaded at a different address each time it is necessary to first find out the right address at which the library will be loaded, then the offset of the function to be hooked must be added to the base address of library and finally it is possible to set the desired breakpoint. It must be noted that in order for the breakpoint to work the code of the library must have been already loaded in memory. 
 
@@ -328,7 +325,7 @@ def end_rec(cpu, procname, asid, pid):
 
 \subsection{Faking time results}
 
-Another important fingerprinting technique consists in checking the Time Stamp Counter (TSC) of the system in order to check the time elapsed between different instructions. Most CPUs provide a dedicated instruction to access the TSC called RDTSC, the most common fingerprinting techniques involve checking the time elapsed between two subsequent execution of RDTSC or fingerprinting the time it takes for a VM Exit to happen. A simple VM exit can be generated with CPUID as it is a privileged instruction as explained in Chaper \ref{chap:1}.
+Another important fingerprinting technique consists in checking the Time Stamp Counter (TSC) of the system in order to check the time elapsed between different instructions. Most CPUs provide a dedicated instruction to access the TSC called RDTSC, the most common fingerprinting techniques involve checking the time elapsed between two subsequent execution of RDTSC or fingerprinting the time it takes for a VM Exit to happen. A simple VM exit can be generated with CPUID as it is a privileged instruction as explained in Chaper \ref{chap:2}.
 
 One of the limitation of \textbf{PANDA} is that it does not provide a callback able to intercept all the types of hypervisor call such as CPUID and RDTSC but, instead, CPUID is the only one associated with \lstinline{PANDA_CB_GUEST_HYPERCALL}. Therefore, in order to manipulated the TSC of the emulated system, it was necessary to introduce some modifications inside the \textbf{PANDA} code base an in particular to add a new callback specifically dedicated to the RDTSC instruction. 
 

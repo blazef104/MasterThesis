@@ -140,9 +140,20 @@ There is a small overhead when utilizing \textbf{pypanda} due to the nature and 
 From the python interface it is possible to access not only \textbf{PPP} interfaces but also classical python callback, this as mentioned before allows for very complex interactions to be written in python. As a matter of fact there are different helper functions such as \lstinline{get_mappings, get_process_name, ...} that provides direct interfaces to other plugins such as OSI, hooks, taint and others. The function \lstinline{run} or \lstinline{run_replay} can then be used to run the simulation. Other helper functions include \lstinline{record} and \lstinline{end_record} used to control the recording, this allows to write python scripts that automatically run a simulation on the live system, records it, then runs some specific plugins on the recording. 
 
 \section{Advantages compared to its competitors}
-\todo{A lot of features, nice interface, record and replay}
-There are other similar projects such as TEMU, DECAF and DRAKWUF however PANDA has some advantages and useful functionalities that can be helpful for analyzing evasive malware and to implement a sthealt VM.
 
-One of the most interesting features of PANDA is the ability to record and replay execution. In particular in relation to evasive malware this is useful as it is possible to write a plugin to hide virtualization artifacts from the system and then run a malware on such system recording its execution. Others plugins can then be used on the replay to perform a proper malware analysis. 
+The table in Figure \ref{fig:frcmp} provides an overview of the other frameworks, similar to PANDA, that are available. 
+
+\todo{Finish this off, add some context on the other frameworks, not only the one in the table but also other based on QEMU for example decaf is all based on tainting}
+
+\begin{figure}[htp]
+\centering
+\includegraphics[width=\linewidth]{images/framcomp.png}
+\caption{Comparison of different analysis frameworks \cite{9018111}}
+\label{fig:frcmp}
+\end{figure}
+
+Taken from the above table the ones based on Full System emulation are: \textit{Ether, MAVMM, DRAKVUF, PyREBox} and \textit{rVMI}. 
+
+One of the most interesting features of PANDA, that is not abailable in any other framework, is the ability to record and replay execution. In particular in relation to evasive malware this is useful as it is possible to write a plugin to hide virtualization artifacts from the system and then run a malware on such system recording its execution. Others plugins can then be used on the replay to perform a proper malware analysis. 
 
 Moreover exposing a python interface, although this introduces a bit of overhead, is a great feature compared to the other frameworks which allows for great scriptablility of actions and fast prototyping of complex experiments.

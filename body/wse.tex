@@ -102,7 +102,6 @@ I/O is another interesting aspect of the virtualization that must be taken into 
 
 \section{QEMU}
 
-\todo{briefly mention bochs as it will come back duriing paranoid tests}
 QEMU is a powerful open source virtualization software which can operate in two modes: 
 
 \textbf{User-Mode emulation} which allows QEMU to run programs compiled for a CPU on another CPU.
@@ -130,8 +129,7 @@ Due to this high flexibility and the ability to run virtually any type of execut
 
 \textbf{Full System Emulation} where QEMU fully emulates the entire architecture and acts as a proper \textbf{Type 2} hypervisor allowing to create proper virtual machines. In this operating mode QEMU can also be used for virtualization meaning that it can take advantage of KVM or hardware assisted virtualization to run virtual machines at Kernel level and achieve near native performances. 
 
-In this mode QEMU emulates not only the CPU but also any other I/O device. An interesting approach is the one taken with network cards, the standard behaviour is to create a virtual tapN interface on the host system which can be configured as any other interface in the system. However if no \lstinline{-net} option is specified QEMU uses a user mode network stack that can be seen in Figure \ref{fig:qemunet}. This is particularly interesting as by exposing the SMB server 
-QEMU facilitates the sharing of files between the host and the virtual machine and it also gives a high level of control to the user by letting him manage the other two devices (DNS and Firewall/DHCP).
+In this mode QEMU emulates not only the CPU but also any other I/O device. An interesting approach is the one taken with network cards, the standard behaviour is to create a virtual tapN interface on the host system which can be configured as any other interface in the system. However if no \lstinline{-net} option is specified QEMU uses a user mode network stack that can be seen in Figure \ref{fig:qemunet}. This is particularly interesting as by exposing the SMB server QEMU facilitates the sharing of files between the host and the virtual machine and it also gives a high level of control to the user by letting him manage the other two devices (DNS and Firewall/DHCP).
 
 \begin{figure}[htp]
 \centering
@@ -147,11 +145,13 @@ guest (10.0.2.15)  <------>  Firewall/DHCP server <-----> Internet
 \label{fig:qemunet}
 \end{figure}
 
-Another important component of QEMU is the Monitor, this can be used to interact with the machine while it is running. In particular it can be used to freeze/unfreeze the machine or save/restore its state from disk. Moreover, it allows to inspect the Virtual Machine without an external debugger.
+In addition to this, some of the components of QEMU are derived from, BOCHS, which is an open source x86 emulator. As it can be seen from the changelog file\footnote{\url{https://github.com/panda-re/panda/blob/master/Changelog}} QEMU uses BOCHS in order to emulate the BIOS and ACPI tables. This is particularly important when it comes to evasive malware as it is a further element that can be used to fingerprint the system.
 
-The Full System Emulation mode is particularly interesting in the field of Security Applications, as a matter of fact having a fully emulated system allows a great control over the internal structures. Such control allows for the implementation of complex analysis techniques which requires introspection and/or manipulation of a running system and that would be hard to implement otherwise. Moreover the ability to have an isolated environment in which a malware can be safely run allowed for the development of malware analysis sadboxes built on top of this QEMU mode. 
+Another important component of QEMU is the Monitor, this is one of the ways in which the user can interface with the virtual machine. The Monitor is a console which accepts commands that are sent directly to the emulator. Through such commands, it allows to inspect the running guest Operating System, change removable media and USB devices and control many different aspects of the virtual machine. For example through the monitor it is possible to send mouse movements or key presses to the virtual machine without having to interact directly with it. The monitor can be accessed in different ways, as a matter of fact, through QEMU command line it is possible to expose the monitor in different ways. It can be binded to Linux sockets so it can be accessed locally but also it can be exposed via TCP so virtual machines can be managed remotely.
 
-In order to perform full system emulation QEMU uses an intermediate language called TCG, this will be analyzed in details in the following section as it is the most important part of the emulator.
+QEMU Full System Emulation mode is particularly interesting in the field of Security Applications, as a matter of fact having a fully emulated system allows a great control over the internal structures. Such control allows for the implementation of complex analysis techniques which requires introspection and/or manipulation of a running system and that would be hard to implement otherwise. Moreover the ability to have an isolated environment in which a malware can be safely run allowed for the development of malware analysis sadboxes built on top of this QEMU mode. 
+
+In order to perform full system emulation QEMU needs to have an architectural neutral way of running code. This means that there will be two processor, the physical one installed on the machine and the virtual one emulated by QEMU. The virtual CPU will take care of translating instruction between the two different architectures. To do this QEMU uses an intermediate language called TCG, this will be analyzed in details in the next section as it is the most important and interesting part of the emulator.
 
 
 \subsection{TCG: Tiny Code Generator}
@@ -165,14 +165,14 @@ By posing this middle layer QEMU allows to seamlessly support different CPU arch
     \item \textbf{Frontend} is the TCG part facing the virtual CPU. It is in responsible of translating virtual instructions into TCG ops.
 \end{itemize} 
 
-There as this is a quite complex system QEMU puts in place some optimizations in order to speed up execution and maintain portability. The most notable ones, taken from \cite{translatorinternals}, are:
+As this is a quite complex system QEMU puts in place some optimizations in order to speed up execution and maintain portability. The most notable ones, taken from \cite{translatorinternals}, are:
 
 \begin{itemize}
     \item \textbf{CPU state optimisations:} the internal state of the CPU is saved in a Translation Block (TB), the translation phase considers that some state information of the virtual CPU cannot change in it. If the state changes a new TB will be generated and the previous TB will not be used until the state matches again the one recorded in it.
     
-    \item \textbf{Direct block chaining:} each time a Basic Block is translated it is added to the a TGC cache. In this way if the Program Counter points to a TB that has already been translated QEMU will skip the translation phase and, instead, jump directly to the next TB. This is usually achieved with the use of an indirect jump. On some host architectures (such as x86 or PowerPC), the \lstinline{JMP} opcode is directly patched so that the block chaining has no overhead.
+    \item \textbf{Direct block chaining:} each time a Basic Block is translated it is added to the a TGC cache. In this way if the Program Counter points to a TB that has already been translated QEMU will skip the translation phase and, instead, jump directly to the next TB. This is usually achieved with the use of an indirect jump. As a matter of fact QEMU will patch the translation block to chain them together directly in the cache. On some host architectures (such as x86 or PowerPC), the \lstinline{JMP} opcode is used straight away so that the block chaining has no overhead.
     
-    In this process the TCG cache plays a particularly important role as it holds all the basic blocks that have already been translated, once this cache is full the approach taken by QEMU is to flush the entire cache instead of implementing a scheduling algorithm.
+    In this process the TCG cache plays a particularly important role as it holds all the basic blocks that have already been translated, once this cache is full QEMU does not implement any flushing algorithm but, instead, the approach taken is to flush the entire cache and start filling it again. This is in line with the locality principle as if no more hits are find in the cache it is probably due to the fact that the execution has moved to another part of code or another program.
     
     \item \textbf{Self-modifying code and translated code invalidation:} the TCG cache will not work in case of self modifying code as QEMU will continue to execute the code that has been already generated on a previous translation. To overcome this problem User-Mode emulation marks a host page as write-protected (if is not already read-only) every time translated code is generated for a basic block. In this way if the program access that page in write mode a violation signal is raised by the host OS. QEMU then invalidates all the previous Translation Blocks for that page and enables write accesses. For system emulation, write protection is achieved through the software MMU.
     
@@ -186,6 +186,8 @@ There as this is a quite complex system QEMU puts in place some optimizations in
     The MMU can also distinguish RAM and ROM memory areas from MMIO memory areas. Access is faster for RAM and ROM because the translation cache also hosts the offset between guest address and host memory. Accessing MMIO memory areas instead calls out to C code for device emulation. Finally, the MMU helps tracking dirty pages and pages pointed to by translation blocks.
 
 \end{itemize}
+
+When QEMU is set to work in Full System Emulation the main activity consists on looking up the next translated block based on the guest PC. First QEMU will try to find the basic block in the above mentioned TCG Cache, if this fails it will fall back and invoke the translator. 
 
 TCG uses a mechanism similar to the one implemented by compilers like GCC where a function prologue and epilogue, which are the small pieces of code used to save and restore the context when entering or exiting functions, are added a compilation time. This same mechanism is used when QEMU calls the different Translation Blocks as it can be seen in Figure \ref{fig:qemutbc}.  
 
