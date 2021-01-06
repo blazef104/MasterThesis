@@ -28,6 +28,11 @@ These last two techniques can also be combined together to aid the analyst in au
 
 In addition to this, as previously mentioned, even with the developed plugins the system is still failing to pass WMI related tests. WMI or Windows Management Instrumentation is an operating system interface exposed by Windows that allows programs to manage the Operating System both locally and remotely. The purpose of WMI allow for management information to be shared between different applications. In particular this interface implements an SQL like language to perform OS queries.
 
+This interface has gained more and more interest in the security community as it can be used maliciously. 
+
+\textit{``While it has been well known and utilized heavily by system administrators since its inception, WMI was likely introduced to the mainstream security community when it was discovered that it was used maliciously as one component in the suite of exploits and implantsused by Stuxnet3.Since then, WMI has been gaining popularity amongst attackers for its ability to perform system reconnaissance, AV and VM detection, code execution, lateral movement, persistence, and data theft.''}~\cite{wmi}
+
+
 This interface can be used to retrieve information from the underlying operating system. Due to the fact that it does not relay on system calls or API calls this behaviour would not be caught by the developed plugins. Instead, it is necessary to develop a custom plugin that will take care of hooking specific parts of the WMI handling part inside the Operating System and can therefore provide patched results. 
 
 %\daniele{Add that it would be interesting to explore techniques like taint analysis or dynamic backward slicing to track how malware reaches exiting primitives and provide hints to the analyst on what may require patching. See what plugins are available for panda}

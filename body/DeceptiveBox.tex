@@ -328,18 +328,18 @@ Another important fingerprinting technique consists of checking the Time Stamp C
 
 One of the limitations of \textbf{PANDA} is that it does not provide a callback able to intercept all the types of hypervisor call such as CPUID and RDTSC but, instead, CPUID is the only one associated with \lstinline{PANDA_CB_GUEST_HYPERCALL}. Therefore, in order to manipulate the TSC of the emulated system, it was necessary to introduce some modifications inside the \textbf{PANDA} code base and in particular to add a new callback specifically dedicated to the RDTSC instruction. 
 
-\textbf{PANDA} already provides the possibility to create Plugin to Plugin interfaces which are particular types of callbacks. However, those can only be based on functions already exposed by the \textbf{PANDA} api which does not provide the necessary level of control over the emulated architecture. Instead, a new ``native`` callback was created for TSC handling named \lstinline{PANDA_CB_RDTSC}. 
+\textbf{PANDA} already provides the possibility to create Plugin to Plugin interfaces which are particular types of callbacks. However, those can only be based on functions already exposed by the \textbf{PANDA} api which does not provide the necessary level of control over the emulated architecture. Instead, a new ``native'' callback was created for TSC handling named \lstinline{PANDA_CB_RDTSC}. 
 
 In order to do this, it is first necessary to understand how QEMU handles the TSC counter for the guest Operating System and how \textbf{PANDA} callbacks work internally. On this last point, it was not possible to find any reference about extending \textbf{PANDA} functionalities inside the documentation and therefore the source code had to be manually interpreted in order to find out where the modifications should take place.
 
-The files involved in the creation of ``native`` callbacks are the following: 
+The files involved in the creation of ``native'' callbacks are the following: 
 
 \begin{itemize}
     \item \lstinline{./panda/include/panda/callbacks/cb-defs.h} this header file holds the declaration of the \lstinline{panda_cb_type} type as well as a union of all possible callback function types.
     
     The modifications introduced in this file in order to support a new callback can be seen in Figure~\ref{fig:mod1}.
     
-    \begin{figure}[htp]
+    \begin{figure}[htp!]
     \centering
     \begin{lstlisting}[language=C]
     typedef enum panda_cb_type {
@@ -354,7 +354,7 @@ The files involved in the creation of ``native`` callbacks are the following:
         bool (*rdtsc)(CPUState *env, uint64_t val); // <- New callback
     } panda_cb;
     \end{lstlisting}
-    \caption{\textbf{cb-defs.h} modifications}
+    \caption{callback support added into \textbf{cb-defs.h}}
     \label{fig:mod1}
     \end{figure}
         
@@ -387,7 +387,7 @@ The function responsible to patch RDTSC in the plugin can be seen in Figure~\ref
 bool rdtsc(CPUState *cpu, uint64_t val){
     if (rdtsc_patch==1){
         if (check_pid(cpu,tname)){ // we need this here otherwise it will segfault
-            val=val/10000;
+            val=val/9000;
             EAX = (uint32_t)(val);
             EDX = (uint32_t)(val >> 32);
             printf("[DEBUG] rdtsc patched!\n");
@@ -397,7 +397,7 @@ bool rdtsc(CPUState *cpu, uint64_t val){
     return false;
 }
 \end{lstlisting}
-\caption{\textbf{cb-defs.h} modifications}
+\caption{Function used to handle and patch an RDTSC instruction}
 \label{fig:rdtscpatch}
 \end{figure}
 
@@ -474,7 +474,7 @@ Lastly in Figure~\ref{fig:rdtsc1}(b) it is possible to see how the plugin can ef
 
 \section{Results}
 
-In order to benchmark the newly created plugins, it was decided to use the two most common and complete tools: ParanoidFish and Al-Khaser.
+In order to validate the newly created plugins it was decided to use the two most common and complete tools for assessing malware analysis environment against common evasion techniques: ParanoidFish and Al-Khaser.
 
 In Figure~\ref{fig:res} it is possible to see how the execution of Paranoid Fish on a system without using any of the newly developed plugins. 
 
@@ -523,4 +523,4 @@ On the other hand the WMI ones in Figure~\ref{fig:alk1} are particularly interes
     \label{fig:alk1}%
 \end{figure}
 
-
+\daniele{Come up with clever ideas to extend this section or we will have big trouble :-) For instance start explaining how you defeat some evasions using the different components you developed, and how sometimes different components cooperate (rdtsc+cpuid VM exit case right?). You can show some snippets of the code from either suite (e.g. 2 from Al-Khaser and 1 from Paranoid fish) and detail how your plugin(s) craft the right fake answer.}

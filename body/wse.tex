@@ -48,7 +48,7 @@ A graphical representation of the differences between the other two types of hyp
 
 \subsection{Type 1 or Bare-Metal}
 
-The \textbf{Type 1} or ``Bare Metal`` hypervisor is a sort of specialized operating system that is dedicated only to the management of virtual machines. This is very commonly found on servers, particularly in data-centers where it is necessary to have a high efficiency on single servers. For this reason, VMs that run on this type of hypervisor can achieve very high performances due to the fact that, similarly to \textbf{Type 0}, they allow guest VMs to run directly on the hardware. Examples of this kind of hypervisor are VMWare ESX and Xen.
+The \textbf{Type 1} or ``Bare Metal'' hypervisor is a sort of specialized operating system that is dedicated only to the management of virtual machines. This is very commonly found on servers, particularly in data-centers where it is necessary to have a high efficiency on single servers. For this reason, VMs that run on this type of hypervisor can achieve very high performances due to the fact that, similarly to \textbf{Type 0}, they allow guest VMs to run directly on the hardware. Examples of this kind of hypervisor are VMWare ESX and Xen.
 
 Moreover, even non-specialized operating systems such as Linux, Windows and macOS have support for virtualization and can act as \textbf{Type 1} hypervisors. As they are not dedicated VMMs they provide fewer controls and customization over the virtualized environment and they have slightly lower performances as treat the virtual machine like every other process. However, virtual machines that run on this kind of hypervisor are still efficient as they will be granted direct access to system resources. 
 
@@ -64,7 +64,7 @@ It must be noted that nowadays these two types of hypervisors can, sometimes, bl
 Virtualization and emulation bring some benefits mainly in terms of:
 \begin{itemize}
     \item \textbf{Efficiency} as multiple virtual machines can be run on a single physical machine optimizing the usage of resources.
-    \item \textbf{Cost reduction} derived directly from the above one, by more efficiently utilizing a single machine it is possible to ``do more with less``.
+    \item \textbf{Cost reduction} derived directly from the above one, by more efficiently utilizing a single machine it is possible to ``do more with less''.
     \item \textbf{Compatibility} as different Operating Systems can run on a single host OS this allows to run, compile or test different applications on top of a single environment almost closing the gap between the various architectures.
     \item \textbf{Easier testing} as different architectures can be emulated on top of a single machine this allows to develop programs for different architectures bypassing some unnecessary steps. For example, an application for a phone can be complied and tested on a normal laptop and then pushed to the phone only when the final version is ready.
     \item \textbf{Security} perhaps the most important fact, as virtual machines are all isolated between them and between the guest OS they can be managed in a better way. Moreover, the ability to take a snapshot of a certain state and then revert the machine back makes it more resilient to attacks, avoids potential data loss and mitigates problems coming from software faults. 
@@ -92,10 +92,10 @@ Many things must be coordinated under the hood in order to successfully trick th
 
 On the memory management side, there is a high pressure on the real memory which will be used by the Host OS, Guest OS and by the VMM itself. There is, therefore, a need for efficient management of the RAM:
 
-\textit{``Before memory optimization can occur, the VMM must establish how much real memory each guest should use. To do that, the VMM first evaluates each guest’s maximum memory size. General-purpose operating systems do not expect the amount of memory in the system to change, so VMMs must maintain the illusion that the guest has that amount of memory. Next, the VMM computes a target real-memory allocation for each guest based on the configured memory for that guest and other factors, such as over commitment and system load``}~\cite{os}
+\textit{``Before memory optimization can occur, the VMM must establish how much real memory each guest should use. To do that, the VMM first evaluates each guest’s maximum memory size. General-purpose operating systems do not expect the amount of memory in the system to change, so VMMs must maintain the illusion that the guest has that amount of memory. Next, the VMM computes a target real-memory allocation for each guest based on the configured memory for that guest and other factors, such as over commitment and system load''}~\cite{os}
 
 The physical CPU will be under stress as well as it will be shared between Guest OS, Host OS and VMM. This latter software has access to the real hardware and can therefore steal CPU cycles from the Guest OSs to schedule its tasks for VM Management.
-\textit{``More difficult is the case of over commitment, in which the guests are configured for more CPUs than exist in the system. Here, a VMM can use standard scheduling algorithms to make progress on each thread but can also add a fairness aspect to those algorithms``}~\cite{os}
+\textit{``More difficult is the case of over commitment, in which the guests are configured for more CPUs than exist in the system. Here, a VMM can use standard scheduling algorithms to make progress on each thread but can also add a fairness aspect to those algorithms''}~\cite{os}
 
 I/O is another interesting aspect of virtualization that must be taken into account, a VMM must create proper virtual devices such as Network Bridges in order to allow each machine to connect to the network. There are moreover devices such as webcams or USB storage which cannot be accessed concurrently therefore there is no alternative if not to allow a single machine at the time to use them.
 
