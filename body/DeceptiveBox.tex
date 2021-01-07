@@ -494,7 +494,111 @@ Now if the \textit{patch\_timing} plugin is enabled it is possible to see how RD
     \label{fig:patsc}%
 \end{figure}
 
-Moreover the when the \textit{syscall\_hook}, \textit{api\_hook} and \textit{patch\_CPUID} plugins are enabled it is possible to see how most of the flags turns to green. In particular, in Figure~\ref{fig:res1} it is possible to see how most of the tests are passed once the test binary is run on an instance of PANDA with all the plugins enabled.
+The code used by Al-Khaser to carry out the above tests can be seen in Figure~\ref{fig:altest}. These tests are contained in the \lstinline{timing.cpp} file. It can be easily seen how the \lstinline{timing_patch} plugin is able to overcome these tests. Although the TSC counter is bound to the one of the real underlying physical machine it has been empirically observed that it does have a great amount of fluctuation Figure~\ref{fig:rdtsc1}(a). Al-Khaser samples the TSC counter 10 times and computes the average of such values. The plugin will simply bring that value down in order to make it closer to bare metal execution. In order to do this the real value is simply divided by an arbitrary number, this is simple and effective and also helps reducing the high fluctuation in numbers that we have on virtualized hardware.  
+
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=C]
+[...]
+BOOL rdtsc_diff_vmexit()
+{
+	ULONGLONG tsc1 = 0;
+	ULONGLONG tsc2 = 0;
+	ULONGLONG avg = 0;
+	INT cpuInfo[4] = {};
+
+	// Try this 10 times in case of small fluctuations
+	for (INT i = 0; i < 10; i++)
+	{
+		tsc1 = __rdtsc();
+		__cpuid(cpuInfo, 0);
+		tsc2 = __rdtsc();
+
+		// Get the delta of the two RDTSC
+		avg += (tsc2 - tsc1);
+	}
+
+	// We repeated the process 10 times so we make sure our check is as much reliable as we can
+	avg = avg / 10;
+	return (avg < 1000 && avg > 0) ? FALSE : TRUE;
+}
+[...]
+\end{lstlisting}
+\caption{Snipped of the code used by Al-Khaser to carry out the tests on the RDTSC instruction}
+\label{fig:altest}
+\end{figure}
+
+Paranoid Fish uses the \lstinline{GetSystemInfo} function to check the number of processors in the machine. Such check is implemented in the \lstinline{gensandbox.c} file and can be seen in Figure~\ref{fig:patest}. The \lstinline{api_hook} plugin will take care of intercepting the call to such function and modify the structure in memory before it is used by the testing program. 
+
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=C]
+[...]
+int gensandbox_one_cpu_GetSystemInfo() {
+	SYSTEM_INFO siSysInfo;
+	GetSystemInfo(&siSysInfo);
+	return siSysInfo.dwNumberOfProcessors < 2 ? TRUE : FALSE;
+}
+[...]
+\end{lstlisting}
+\caption{Snipped of the code used by Paranoid Fish to test the number of processors}
+\label{fig:patest}
+\end{figure}
+
+Lastly Paranoid Fish tests the \lstinline{SystemBiosVersion} value of the registry key \lstinline{HKLM\HARDWARE\Description\System}. The snippet of code responsible for the test can be seen in Figure~\ref{fig:patest2}. This is particularly interesting our \lstinline{syscall_hook} plugin is able to patch this information not by replacing the registry key but by intercepting the value returned by the system call used to query that key. As a matter of fact, the \lstinline{RegQueryValueEx} function exposed by the Windows API ultimately uses the \lstinline{NtQueryValueKey} function to access the registry. This is a system call and is exactly the one hooked by the newly developed plugin. The plugin is able to catch the value returned by the system call before it is used by Paranoid Fish and modify it to hide the string. This has two main benefits: firstly the system is untouched meaning that if other programs make the same query the real value will be returned. This is particularly important as some of those registry keys might be used by critical programs in the machine. Secondly, this system is highly extensible. As a matter of fact, adding a new registry value to patch is as simple as identifying its name and add it to the plugin handling function together with the value to be substituted.
+
+\begin{figure}[htp]
+\centering
+\begin{lstlisting}[language=C]
+int pafish_exists_regkey_value_str(HKEY hKey, char * regkey_s, char * value_s, char * lookup) {
+	HKEY regkey;
+	LONG ret;
+	DWORD size;
+	char value[1024], * lookup_str;
+	size_t lookup_size;
+
+	lookup_size = strlen(lookup);
+	lookup_str = malloc(lookup_size+sizeof(char));
+	strncpy(lookup_str, lookup, lookup_size+sizeof(char));
+
+	size = sizeof(value);
+	if (pafish_iswow64()) {
+		ret = RegOpenKeyEx(hKey, regkey_s, 0, KEY_READ | KEY_WOW64_64KEY, &regkey);
+	}
+	else {
+		ret = RegOpenKeyEx(hKey, regkey_s, 0, KEY_READ, &regkey);
+	}
+	if (ret == ERROR_SUCCESS) {
+		ret = RegQueryValueEx(regkey, value_s, NULL, NULL, (BYTE*)value, &size);
+		RegCloseKey(regkey);
+		if (ret == ERROR_SUCCESS) {
+			size_t i;
+			for (i = 0; i < strlen(value); i++) { /* case-insensitive */
+				value[i] = toupper(value[i]);
+			}
+			for (i = 0; i < lookup_size; i++) { /* case-insensitive */
+				lookup_str[i] = toupper(lookup_str[i]);
+			}
+			if (strstr(value, lookup_str) != NULL) {
+				free(lookup_str);
+				return TRUE;
+			}
+		}
+	}
+	free(lookup_str);
+	return FALSE;
+}
+[...]
+int bochs_reg_key1() {
+	return pafish_exists_regkey_value_str(HKEY_LOCAL_MACHINE, "HARDWARE\\Description\\System", "SystemBiosVersion", "BOCHS");
+}
+[...]
+\end{lstlisting}
+\caption{Snipped of the code used by Paranoid Fish to test for the presence of the BOCHS string in the SystemBiosVersion registry value.}
+\label{fig:patest2}
+\end{figure}
+
+Moreover when the \lstinline{syscall_hook}, \lstinline{api_hook} and \lstinline{patch_CPUID} plugins are enabled it is possible to see how most of the flags turns to green. In particular, in Figure~\ref{fig:res1} it is possible to see how most of the tests are passed once the test binary is run on an instance of PANDA with all the plugins enabled.
 
 \begin{figure}[htp]
     \centering
@@ -512,6 +616,7 @@ The same results are also achieved when running Al-Khaser as in Figure~\ref{fig:
     \label{fig:alk2}%
 \end{figure}
 
+
 There are, however, some tests which are still failing as it can be seen from the above screenshots. For example the ones related to the disk size can easily be fixed by creating a bigger virtual hard disk.
 
 On the other hand the WMI ones in Figure~\ref{fig:alk1} are particularly interesting as they requires a deep understanding of how WMI is treated inside windows and how it can be patched. A detailed discussion on this can be found in the next chapter. 
@@ -523,4 +628,5 @@ On the other hand the WMI ones in Figure~\ref{fig:alk1} are particularly interes
     \label{fig:alk1}%
 \end{figure}
 
-\daniele{Come up with clever ideas to extend this section or we will have big trouble :-) For instance start explaining how you defeat some evasions using the different components you developed, and how sometimes different components cooperate (rdtsc+cpuid VM exit case right?). You can show some snippets of the code from either suite (e.g. 2 from Al-Khaser and 1 from Paranoid fish) and detail how your plugin(s) craft the right fake answer.}
+
+
