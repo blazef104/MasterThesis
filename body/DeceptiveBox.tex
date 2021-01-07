@@ -65,7 +65,7 @@ The \textit{KeyValueInformationClass} is particularly interesting as based on th
 
 A common enumeration technique to detect QEMU consists of querying the value \textit{SystemBiosVersion} which is found under the path \lstinline{HKEY_LOCAL_MACHINE\HARDWARE\Description\System} and comparing it with the string \textit{BOCHS}.
 
-In order to patch the above described System Call using \textbf{PANDA} it was necessary to hook the function when it returns, this can be done in the C plugin by registering to use appropriate \textbf{PPP} callback in the \lstinline{init_plugin} section. The implementation can be seen in Figure~\ref{fig:pinit}.
+In order to patch the above-described System Call using \textbf{PANDA} it was necessary to hook the function when it returns, this can be done in the C plugin by registering to use appropriate \textbf{PPP} callback in the \lstinline{init_plugin} section. The implementation can be seen in Figure~\ref{fig:pinit}.
 
 \begin{figure}[htp]
 \centering
@@ -294,7 +294,7 @@ The content of this structure will be populated after the function executes ther
 This can be achieved by saving the return address placed on the stack when the function is called and setting a breakpoint on such address. In this way, the address of the structure can be extracted from the stack once the function returns and then the \lstinline{dwNumberOfProcessors} field patched.  
 
 
-As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis, the record and replay actions have been automated inside the python script. To achieve this the hooks2 plugin was used, such plugin is designed to substitute the hooks one. Although it is not yet finished it already provides some useful callbacks, in particular the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording. Some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in~\ref{fig:startstop}
+As mentioned before the use of Python provides great flexibility not only in plugin writing but also on the automation side. In order to automate the analysis, the record and replay actions have been automated inside the python script. To achieve this the hooks2 plugin was used, such plugin is designed to substitute the hooks one. Although it is not yet finished it already provides some useful callbacks. In particular, the \lstinline{on_process_start} and \lstinline{on_process_end} callbacks have been used to start and stop the recording. Some checks have been put in place in order to execute the code only if the process is the one monitored and only if the script is being run on a live system. Details of such functions can be seen in Figure~\ref{fig:startstop}
 
 \begin{figure}[htp]
 \centering
@@ -407,7 +407,7 @@ To test if this plugin was working and also test the performances of the fully e
 
 \begin{enumerate}
     \item Define a baseline of the time taken by instructions to be executed on a bare-metal system Figure~\ref{fig:bmetal}.
-    \item Determine the time it takes to execute the same instruction under full system emulation Figure~\ref{fig:rdtsc1}(a). This is particularly challenging as the more plugins are used in the system the more it takes for the entire emulation to run. The results in Figure~\ref{fig:rdtsc1}(a) were obtained with all the above created plugins loaded. 
+    \item Determine the time it takes to execute the same instruction under full system emulation Figure~\ref{fig:rdtsc1}(a). This is particularly challenging as the more plugins are used in the system the more it takes for the entire emulation to run. The results in Figure~\ref{fig:rdtsc1}(a) were obtained with all the above-created plugins loaded. 
 \end{enumerate}
 
 
@@ -430,19 +430,19 @@ void test1(){
         printf("Second call %llu\n",ret1);
 
         printf("Difference %llu\n",ret1-ret);
+        Sleep(500);
+        __asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
+        ret  = ((unsigned long long)eax) | (((unsigned long long)edx) << 32);
+        
+        __asm__ volatile("cpuid" : /* no output */ : "a"(0x00));
+        
+        __asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
+        ret2  = ((unsigned long long)eax) | (((unsigned long long)edx) << 32);
+        printf("VM exit %llu\n",ret2-ret);
+        Sleep(500);
+    
     }
-
-    __asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
-    ret  = ((unsigned long long)eax) | (((unsigned long long)edx) << 32);
-	
-	__asm__ volatile("cpuid" : /* no output */ : "a"(0x00));
-	
-	__asm__ volatile("rdtsc" : "=a" (eax), "=d" (edx));
-	ret2  = ((unsigned long long)eax) | (((unsigned long long)edx) << 32);
-    printf("VM exit %llu\n",ret2-ret);
 }
-
-
 
 int main(){
     printf("Calling test1\n");
@@ -462,10 +462,10 @@ int main(){
     \label{fig:bmetal}%
 \end{figure}
 
-\begin{figure}%
+\begin{figure}[htp]
     \centering
-    \subfloat[\centering vanilla system]{{\includegraphics[width=0.5\linewidth]{images/cptest2.png} }}%
-    \subfloat[\centering plugin]{{\includegraphics[width=0.5\linewidth]{images/cptest3.png} }}%
+    \subfloat[\centering vanilla system]{{\includegraphics[width=0.4\linewidth]{images/t2.png} }}%
+    \subfloat[\centering plugin]{{\includegraphics[width=0.3734\linewidth]{images/t1.png} }}%
     \caption{Results of running RDTSC without the patch (a) and with the \lstinline{timing_patch} plugin applied (b)}%
     \label{fig:rdtsc1}%
 \end{figure}
@@ -494,9 +494,9 @@ Now if the \textit{patch\_timing} plugin is enabled it is possible to see how RD
     \label{fig:patsc}%
 \end{figure}
 
-The code used by Al-Khaser to carry out the above tests can be seen in Figure~\ref{fig:altest}. These tests are contained in the \lstinline{timing.cpp} file. It can be easily seen how the \lstinline{timing_patch} plugin is able to overcome these tests. Although the TSC counter is bound to the one of the real underlying physical machine it has been empirically observed that it does have a great amount of fluctuation Figure~\ref{fig:rdtsc1}(a). Al-Khaser samples the TSC counter 10 times and computes the average of such values. The plugin will simply bring that value down in order to make it closer to bare metal execution. In order to do this the real value is simply divided by an arbitrary number, this is simple and effective and also helps reducing the high fluctuation in numbers that we have on virtualized hardware.  
+The code used by Al-Khaser to carry out the above tests can be seen in Figure~\ref{fig:altest}. These tests are contained in the \lstinline{timing.cpp} file. It can be easily seen how the \lstinline{timing_patch} plugin is able to overcome these tests. Although the TSC counter is bound to the one of the real underlying physical machine it has been empirically observed that it does have a great amount of fluctuation Figure~\ref{fig:rdtsc1}(a). Al-Khaser samples the TSC counter 10 times and computes the average of such values. The plugin will simply bring that value down in order to make it closer to bare metal execution. In order to do this, the real value is simply divided by an arbitrary number, this is simple and effective and also helps to reduce the high fluctuation in numbers that we have on virtualized hardware.  
 
-\begin{figure}[htp]
+\begin{figure}[h!]
 \centering
 \begin{lstlisting}[language=C]
 [...]
@@ -530,7 +530,7 @@ BOOL rdtsc_diff_vmexit()
 
 Paranoid Fish uses the \lstinline{GetSystemInfo} function to check the number of processors in the machine. Such check is implemented in the \lstinline{gensandbox.c} file and can be seen in Figure~\ref{fig:patest}. The \lstinline{api_hook} plugin will take care of intercepting the call to such function and modify the structure in memory before it is used by the testing program. 
 
-\begin{figure}[htp]
+\begin{figure}[ht!]
 \centering
 \begin{lstlisting}[language=C]
 [...]
@@ -547,7 +547,7 @@ int gensandbox_one_cpu_GetSystemInfo() {
 
 Lastly Paranoid Fish tests the \lstinline{SystemBiosVersion} value of the registry key \lstinline{HKLM\HARDWARE\Description\System}. The snippet of code responsible for the test can be seen in Figure~\ref{fig:patest2}. This is particularly interesting our \lstinline{syscall_hook} plugin is able to patch this information not by replacing the registry key but by intercepting the value returned by the system call used to query that key. As a matter of fact, the \lstinline{RegQueryValueEx} function exposed by the Windows API ultimately uses the \lstinline{NtQueryValueKey} function to access the registry. This is a system call and is exactly the one hooked by the newly developed plugin. The plugin is able to catch the value returned by the system call before it is used by Paranoid Fish and modify it to hide the string. This has two main benefits: firstly the system is untouched meaning that if other programs make the same query the real value will be returned. This is particularly important as some of those registry keys might be used by critical programs in the machine. Secondly, this system is highly extensible. As a matter of fact, adding a new registry value to patch is as simple as identifying its name and add it to the plugin handling function together with the value to be substituted.
 
-\begin{figure}[htp]
+\begin{figure}[h!]
 \centering
 \begin{lstlisting}[language=C]
 int pafish_exists_regkey_value_str(HKEY hKey, char * regkey_s, char * value_s, char * lookup) {
@@ -600,7 +600,7 @@ int bochs_reg_key1() {
 
 Moreover when the \lstinline{syscall_hook}, \lstinline{api_hook} and \lstinline{patch_CPUID} plugins are enabled it is possible to see how most of the flags turns to green. In particular, in Figure~\ref{fig:res1} it is possible to see how most of the tests are passed once the test binary is run on an instance of PANDA with all the plugins enabled.
 
-\begin{figure}[htp]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=\linewidth]{images/par2.png}%
     \caption{Paranoid Fish tests on a patched system}%
@@ -609,24 +609,30 @@ Moreover when the \lstinline{syscall_hook}, \lstinline{api_hook} and \lstinline{
 
 The same results are also achieved when running Al-Khaser as in Figure~\ref{fig:alk2}.
 
-\begin{figure}[htp]
+\begin{figure}[h!]
     \centering
     \includegraphics[width=\linewidth]{images/al2.png}%
     \caption{Al-Khaser running on a patched system}%
     \label{fig:alk2}%
 \end{figure}
 
+There are, however, some tests that are still failing as it can be seen from the above screenshots. For example, the ones related to the disk size can easily be fixed by creating a bigger virtual hard disk.
 
-There are, however, some tests which are still failing as it can be seen from the above screenshots. For example the ones related to the disk size can easily be fixed by creating a bigger virtual hard disk.
+On the other hand, the WMI ones in Figure~\ref{fig:alk1} are particularly interesting as they require a deep understanding of how WMI is treated inside windows and how it can be patched. A detailed discussion on this can be found in the next chapter. 
 
-On the other hand the WMI ones in Figure~\ref{fig:alk1} are particularly interesting as they requires a deep understanding of how WMI is treated inside windows and how it can be patched. A detailed discussion on this can be found in the next chapter. 
-
-\begin{figure}[htp]
+\begin{figure}[hp!]
     \centering
-    \includegraphics[width=\linewidth]{images/al1.png}%
-    \caption{Al-khaser}%
+    \includegraphics[width=0.8\linewidth]{images/al1.png}%
+    \caption{Al-khaser WMI tests}%
     \label{fig:alk1}%
 \end{figure}
+
+% ugly workaround to get the text after the image
+\begin{figure}[h!]
+    To conclude it is possible to see how the plugins developed in this thesis to overcome common anti analysis techniques are able to successfully mask Red Pills on a whole system emulation framework such as PANDA. In particular a comparison of RDTSC execution on bare-metal, PANDA and patched system has also been presented. This was used to determine the values to be used with the developed plugin to patch the TSC counter. On the other hand, a remaining technique based on WMI still needs a dedicated plugin to be patched. This is left as future work and briefly explained in the next chapter.
+\end{figure}
+
+
 
 
 

@@ -7,9 +7,9 @@ The word virtualization today is used to identify both generic virtualization an
 
 First of all virtualization itself can be divided into 3 categories: modern processors have built-in support for virtualization meaning that the system is able to execute virtual machines, on the physical CPU in complete isolation, this is called \textbf{hardware assisted virtualization}. \textbf{Paravirtualization} and \textbf{full virtualization} are older methods that require either the modification of the guest system or partial emulation of the CPU. In particular, in \textbf{Paravirtualization} the hypervisor provides an API and the guest OS makes calls to that API. \textbf{Full virtualization} relies on binary translation to trap and virtualize the execution of certain non-virtualizable instructions, this approach requires that critical instructions are discovered and replaced with traps that will implement such instructions in software.
 
-A typical use of virtualization would be to share resources of a single system between multiple users or to have multiple Operating Systems on the same machine. This is done by providing a thin layer of abstraction on top of the physical hardware in order for it to be shared, concurrently among multiple virtual systems. The limit of this virtualization is that there will always be a 1 to 1 correspondence between virtual and physical hardware. Meaning that, on top of a defined architecture, the virtual processors can be only of the same architecture as the virtual one: on top of a physical 64-bit processor the virtual one will be a 64-bit processor as well. Such system provides different advantages: first of all the abstraction of the CPU can be accomplished with very low overhead as the instructions for the virtual CPU can be run directly on the physical one moreover, modern CPUs have some very specific mechanism to have efficient virtualization.
+A typical use of virtualization would be to share resources of a single system between multiple users or to have multiple Operating Systems on the same machine. This is done by providing a thin layer of abstraction on top of the physical hardware in order for it to be shared, concurrently among multiple virtual systems. The limit of this virtualization is that there will always be a 1 to 1 correspondence between virtual and physical hardware. Meaning that, on top of a defined architecture, the virtual processors can be only of the same architecture as the virtual one: on top of a physical 64-bit processor the virtual one will be a 64-bit processor as well. Such system provides different advantages: first of all the abstraction of the CPU can be accomplished with a very low overhead as the instructions for the virtual CPU can be run directly on the physical one moreover, modern CPUs have some very specific mechanism to have efficient virtualization.
 
-Whole-System emulation is a completely different method that allows running different architectures on top of a single one. As a matter of fact the CPU, and possibly other devices, are implemented in software introducing an intermediate layer that allows a program compiled for a specific architecture to be run on different ones. This method introduces a much higher overhead compared to the previous one as, in order to translate instructions from an architecture into another, there is the need for a middleware that performs such conversion at run time.
+Whole-System emulation is a completely different method that allows running different architectures on top of a single one. As a matter of fact, the CPU, and possibly other devices, are implemented in software introducing an intermediate layer that allows a program compiled for a specific architecture to be run on different ones. This method introduces a much higher overhead compared to the previous one as, in order to translate instructions from an architecture into another, there is the need for a middleware that performs such conversion at run time.
 
 The Operating System on top of which the virtualization software runs is called Host OS while the Operating System that runs inside each virtual machine is called Guest OS. The glue layer between physical and virtual hardware is called hypervisor or Virtual Machine Manager, this term applies both to hardware-assisted virtualization and whole-system emulation as it will be explained in the following sections.
 
@@ -17,7 +17,7 @@ One of the most famous tools that provide both virtualization and whole-system e
 
 \section{A Bit of Background: The Hypervisor}
 
-At the core of the virtualization process there is the Hypervisor. The hypervisor is a piece of code whose definition blends with the one of operating system. Hypervisors are also commonly referred to as Virtual Machine Managers (VMM) in fact they take care of all the tasks related to the management of resources and integration between physical and virtual machine, effectively creating an interface between the two.
+At the core of the virtualization process there is the Hypervisor. The hypervisor is a piece of code whose definition blends with the one of Operating System. Hypervisors are also commonly referred to as Virtual Machine Managers (VMM) in fact they take care of all the tasks related to the management of resources and integration between physical and virtual machine, effectively creating an interface between the two.
 
 Virtualization requirements have been defined in ~\cite{virtreq} and the same paper propose a set of properties that Virtual Machine Monitor should have:
 
@@ -35,7 +35,7 @@ Modern processors have virtualization support built in the hardware meaning that
 
 In addition to this, all modern CPU implements a form of Hardware-Assisted Virtualization, called VT-x for Intel and AMD-V for AMD. Hardware virtualization allows for better performance and easy maintaining of the virtualization software by expanding the CPU instruction set with some dedicated instructions. 
 
-A graphical representation of the differences between the other two types of hypervisors can be found in Figure \ref{fig:hip}.
+A graphical representation of the differences between the other two types of hypervisors can be found in Figure~\ref{fig:hip}.
 
 \begin{figure}[htp]
 \centering
@@ -106,7 +106,7 @@ QEMU is a powerful open-source virtualization software that can operate in two m
 
 \textbf{User-Mode emulation} which allows QEMU to run programs compiled for a CPU on another CPU.
 
-This working mode differs from whole-system emulation as the only device that is emulated here is the CPU moreover, such CPU is used to run only the user space code and in particular the code of the program to be run. The different signals generated by that program are then captured and converted into native ones which can be executed on the host machine. A visual representation of this mode can be seen in Figure \ref{fig:quser}.
+This working mode differs from whole-system emulation as the only device that is emulated here is the CPU moreover, such CPU is used to run only the user space code and in particular the code of the program to be run. The different signals generated by that program are then captured and converted into native ones which can be executed on the host machine. A visual representation of this mode can be seen in Figure~\ref{fig:quser}.
 
 \begin{figure}[htp]
 \centering
@@ -129,7 +129,7 @@ Due to this high flexibility and the ability to run virtually any type of execut
 
 \textbf{Full System Emulation} where QEMU fully emulates the entire architecture and acts as a proper \textbf{Type 2} hypervisor allowing to create proper virtual machines. In this operating mode QEMU can also be used for virtualization meaning that it can take advantage of KVM or hardware-assisted virtualization to run virtual machines at Kernel level and achieve near-native performances. 
 
-In this mode, QEMU emulates not only the CPU but also any other I/O device. An interesting approach is the one taken with network cards, the standard behavior is to create a virtual tapN interface on the host system which can be configured as any other interface in the system. However, if no \lstinline{-net} option is specified QEMU uses a user-mode network stack that can be seen in Figure \ref{fig:qemunet}. This is particularly interesting as by exposing the SMB server QEMU facilitates the sharing of files between the host and the virtual machine and it also gives a high level of control to the user by letting him manage the other two devices (DNS and Firewall/DHCP).
+In this mode, QEMU emulates not only the CPU but also any other I/O device. An interesting approach is the one taken with network cards, the standard behavior is to create a virtual tapN interface on the host system which can be configured as any other interface in the system. However, if no \lstinline{-net} option is specified QEMU uses a user-mode network stack that can be seen in Figure~\ref{fig:qemunet}. This is particularly interesting as by exposing the SMB server QEMU facilitates the sharing of files between the host and the virtual machine and it also gives a high level of control to the user by letting him manage the other two devices (DNS and Firewall/DHCP).
 
 \begin{figure}[htp]
 \centering
@@ -187,9 +187,9 @@ As this is a quite complex system QEMU puts in place some optimizations in order
 
 \end{itemize}
 
-When QEMU is set to work in Full System Emulation the main activity consists on looking up the next translated block based on the guest PC. First QEMU will try to find the basic block in the above mentioned TCG Cache, if this fails it will fall back and invoke the translator. 
+When QEMU is set to work in Full System Emulation the main activity consists on looking up the next translated block based on the guest PC. First QEMU will try to find the basic block in the above-mentioned TCG Cache, if this fails it will fall back and invoke the translator. 
 
-TCG uses a mechanism similar to the one implemented by compilers like GCC where a function prologue and epilogue, which are the small pieces of code used to save and restore the context when entering or exiting functions, are added a compilation time. This same mechanism is used when QEMU calls the different Translation Blocks as it can be seen in Figure \ref{fig:qemutbc}.  
+TCG uses a mechanism similar to the one implemented by compilers like GCC where a function prologue and epilogue, which are the small pieces of code used to save and restore the context when entering or exiting functions, are added a compilation time. This same mechanism is used when QEMU calls the different Translation Blocks as it can be seen in Figure~\ref{fig:qemutbc}.  
 
 \begin{figure}[htp]
 \centering
@@ -198,7 +198,7 @@ TCG uses a mechanism similar to the one implemented by compilers like GCC where 
 \label{fig:qemutbc}
 \end{figure}
 
-The precise flowchart of how instructions are translated between architectures can be seen in Figure \ref{fig:qemuflow}.
+The precise flowchart of how instructions are translated between architectures can be seen in Figure~\ref{fig:qemuflow}.
 
 \begin{figure}[htp]
 \centering

@@ -31,7 +31,7 @@ An exhaustive list of available \textbf{callbacks} can be found in the documenta
     \item \textbf{Management Callbacks} are used to perform actions when specific actions related to QEMU takes place, for example when the monitor interface is used.
 \end{itemize}
 
-A visual representation of the emulation stage at which the various callbacks are executed can be seen in Figure \ref{fig:calls}.
+A visual representation of the emulation stage at which the various callbacks are executed can be seen in Figure~\ref{fig:calls}.
 
 \begin{figure}[ht]
 \centering
@@ -63,7 +63,7 @@ As it can be easily understood plugins can also be used in combination with a he
 
 \subsubsection{Plugin Writing}
 
-Plugins can be written in C or C++, in order for them to be compiled and enable into PANDA a specific folder structure is required. Such structure is outlined in \ref{fig:plugs}
+Plugins can be written in C or C++, in order for them to be compiled and enable into PANDA a specific folder structure is required. Such structure is outlined in Figure~\ref{fig:plugs}
 
 \begin{figure}[htp]
 \centering
@@ -83,7 +83,7 @@ Plugins can be written in C or C++, in order for them to be compiled and enable 
 \label{fig:plugs}
 \end{figure}
 
-The Makefile is most of the time standard and provided by PANDA, it can be seen in Figure \ref{fig:mak}
+The Makefile is most of the time standard and provided by PANDA, it can be seen in Figure~\ref{fig:mak}
 
 \begin{figure}[htp]
 \centering
@@ -113,11 +113,11 @@ In addition to this, the plugin should import the following file \lstinline{#inc
 
 \subsection{Record and Replay}
 
-In addition to the above plugin system \textbf{PANDA} also features a method to record the entire state of the machine and replay that later in a deterministic way. This leverages the \textbf{rr} (record and replay) framework from Mozilla which was usually developed to extend gdb functionalities and allow for time travel debugging. 
+In addition to the above plugin system, \textbf{PANDA} also features a method to record the entire state of the machine and replay that later in a deterministic way. This leverages the \textbf{rr} (record and replay) framework from Mozilla which was usually developed to extend gdb functionalities and allow for time travel debugging. 
 
 \textit{``You record a failure once, then debug the recording, deterministically, as many times as you want. The same execution is replayed every time.''}\footnote{\url{https://rr-project.org/}}
 
-This enables writing complex and articulated plugins and allows for faster analysis. As a matter of fact, plugins introduce overhead in the execution. Recording the execution of a malware without any plugins enabled and then run them on the recording allows to get rid of a lot of that overhead. This is the typical workflow as in Figure \ref{fig:wkflow}. Since the replay is deterministic it will have the same result at every run. It means that the results are the same as if the machine is booted up, the OS is started and initialized, possibly some modifications applied and then the program to be analyzed is run. This has however some limitations as explained on the\textbf{rr} website: 
+This enables writing complex and articulated plugins and allows for faster analysis. As a matter of fact, plugins introduce overhead in the execution. Recording the execution of a malware without any plugins enabled and then run them on the recording allows to get rid of a lot of that overhead. This is the typical workflow as in Figure~\ref{fig:wkflow}. Since the replay is deterministic it will have the same result at every run. It means that the results are the same as if the machine is booted up, the OS is started and initialized, possibly some modifications applied and then the program to be analyzed is run. This has however some limitations as explained on the\textbf{rr} website: 
 
 \textit{``Unlike many record and replay implementations, we do not record the inputs to devices; this means that one cannot "go live" during a recording, but it greatly simplifies the implementation. To get an idea of what is recorded, imagine drawing a line around the CPU and RAM; things going from the outside world to the CPU and RAM, crossing this line, must be recorded.''}
 
@@ -128,7 +128,7 @@ Plugins are generally used for analysis therefore they rarely modify directly th
 
 \subsection{Python Bindings}
 
-In addition to the above mentioned plugins system \textbf{PANDA} exposes also a Python interface, this is referred to as \textbf{pypanda}. The documentation for the python package can be found at \url{https://panda-re.github.io/panda.html}. Such interface allows for better scriptability and to have faster prototyping. Everything that can be done with a ``standard'' C/C++ plugin can be accomplished with Python moreover, \textbf{pypanda} exposes some high-level functions that can be used to write entire scripts to automatically run a self-contained simulation.
+In addition to the above-mentioned plugins system, \textbf{PANDA} exposes also a Python interface, this is referred to as \textbf{pypanda}. The documentation for the python package can be found at \url{https://panda-re.github.io/panda.html}. Such an interface allows for better scriptability and to have faster prototyping. Everything that can be done with a ``standard'' C/C++ plugin can be accomplished with Python moreover, \textbf{pypanda} exposes some high-level functions that can be used to write entire scripts to automatically run a self-contained simulation.
 
 In addition to this there are some C/C++ plugins created to be used specifically with \textbf{pypanda}. An example is the hooks plugin as mentioned in issue 613\footnote{\url{https://github.com/panda-re/panda/issues/613}}:
 
@@ -140,18 +140,18 @@ While proper plugins are somehow specialized pieces of code designed to analyze 
 
 There is a small overhead when utilizing \textbf{pypanda} due to the nature and efficiency of the python code which is naturally different from pure C/C++ implementations however, as mentioned before, there are some operations such as setting hooks that are designed to be done mainly via the python interface. Moreover, the python library exposes some more convenient methods to access internal structures compared with classical \textbf{PANDA} APIs. 
 
-From the python interface it is possible to access not only \textbf{PPP} interfaces but also classical python callback, as mentioned before this allows for very complex interactions to be written in python. As a matter of fact, there are different helper functions such as \lstinline{get_mappings, get_process_name, ...} that provides direct interfaces to other plugins such as OSI, hooks, taint and others. The function \lstinline{run} or \lstinline{run_replay} can then be used to run the simulation. Other helper functions include \lstinline{record} and \lstinline{end_record} used to control the recording, this allows to write python scripts that automatically run a simulation on the live system, records it, then runs some specific plugins on the recording. 
+From the python interface, it is possible to access not only \textbf{PPP} interfaces but also classical python callback, as mentioned before this allows for very complex interactions to be written in python. As a matter of fact, there are different helper functions such as \lstinline{get_mappings, get_process_name, ...} that provides direct interfaces to other plugins such as OSI, hooks, taint and others. The function \lstinline{run} or \lstinline{run_replay} can then be used to run the simulation. Other helper functions include \lstinline{record} and \lstinline{end_record} used to control the recording, this allows to write python scripts that automatically run a simulation on the live system, records it, then runs some specific plugins on the recording. 
 
 \section{Advantages over Competitors}
 
-The table in Figure \ref{fig:frcmp} provides an overview of the other analysis frameworks available. The most relevant ones have been briefly described in Chapter 2.5. 
+The table in Figure~\ref{fig:frcmp} provides an overview of the other analysis frameworks available. The most relevant ones have been briefly described in Chapter 2.5. 
 
 As already mentioned PANDA has the big advantage of running in full system emulation. This means that it can provide live access to the entire system without any problem and also allows to perform instrumentation at a deep level in the virtual machine in order to remain the most transparent as possible. 
 
-Another interesting feature of PANDA, which is not available in any other framework, is the ability to record and replay execution. In particular, in relation to evasive malware, this is useful as it is possible to write a plugin to hide virtualization artifacts from the system and then run a malicious program on such system recording its execution. Other plugins can then be used on the replay to perform different malware analysis techniques in an easy and convenient way.
+Another interesting feature of PANDA, which is not available in any other framework, is the ability to record and replay execution. In particular, in relation to evasive malware, this is useful as it is possible to write a plugin to hide virtualization artifacts from the system and then run a malicious program on such a system recording its execution. Other plugins can then be used on the replay to perform different malware analysis techniques in an easy and convenient way.
 
 Moreover, although the functions and callbacks exposed by PANDA are similar to the ones of other frameworks such as DECAF, the ones from PANDA allows a deep level of integration with the virtual machine. In this way, it is possible to place callbacks at many different levels of the emulation. Moreover, some callbacks are also available when network interaction happens. This allows to easily emulate, test and control network connections made by the malware. 
 
-The other advantage is that this framework provides a solid plugin base, as a matter of fact, many different plugins are provided to carry out common analysis tasks. This is particularly important as it is possible to run a sample in an out of the box system without having to put the extra effort of coding a custom plugin to perform a specific analysis. 
+The other advantage is that this framework provides a solid plugin base, as a matter of fact, many different plugins are provided to carry out common analysis tasks. This is particularly important as it is possible to run a sample in an out of the box system without having to put the extra effort of coding a custom plugin to perform specific analysis. 
 
 In addition to this, PANDA offers an integrated debugger through QEMU monitor further expanding its capabilities as a program can be debugged while plugins are running on the system. Moreover PANDA, similarly to PyREBox, has built-in support for the volatility framework. This adds another level of analysis as it is possible to perform memory forensics directly on the live system.
